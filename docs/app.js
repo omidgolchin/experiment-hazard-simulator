@@ -93,7 +93,7 @@
 
   var BASE_IDS = ["nTasks", "nSeeds", "sigmaTask", "delta"];
   var hazardEls = {}; // id -> {checkbox, input, output, extra}
-  var chart = null;
+  var lastHist = null; // last drawn estimates, for theme-change redraws
 
   function el(id) { return document.getElementById(id); }
   function fmt(v, d) { return Number(v).toFixed(d === undefined ? 0 : d); }
@@ -273,7 +273,7 @@
     var pct = function (x) { return (x * 100).toFixed(1) + "%"; };
     var hEl = el("rateHazard");
     hEl.textContent = pct(haz.rate);
-    hEl.className = "big " + (delta === 0 && haz.rate > 0.08 ? "bad" : "");
+    hEl.className = "big " + (delta === 0 && haz.rate > 0.08 ? "bad-text" : "");
     el("rateHazardLbl").textContent =
       rateWord(delta) + " with the hazards above (" + N_EXP + " experiments)";
     el("meanHazard").textContent =
@@ -293,7 +293,7 @@
     var wrap = el("checks");
     wrap.innerHTML = "";
     if (active.length === 0) {
-      wrap.innerHTML = "<p style=\"color:var(--muted)\">No hazards are on — " +
+      wrap.innerHTML = "<p class=\"muted\">No hazards are on — " +
         "this is the clean design. Its false-positive rate should sit near 5%.</p>";
       return;
     }
@@ -329,69 +329,26 @@
     return counts.map(function (c) { return (c / estimates.length) * 100; });
   }
 
+  // The histogram keeps its binning; the drawing is the shared kit chart
+  // (KitChart.makeBars — Chart.js when the CDN loads, the kit's hand-drawn
+  // fallback otherwise). Only every fifth bin edge is labelled, so the
+  // axis stays readable at phone width in both renderers.
   function drawHistogram(hazEst, cleanEst, cleanMean) {
+    lastHist = [hazEst, cleanEst, cleanMean];
     var edges = [];
     for (var i = 0; i <= 30; i++) edges.push(-0.6 + i * 0.04);
-    var labels = edges.slice(0, -1).map(function (e) { return e.toFixed(2); });
-    var hazCounts = bins(hazEst, edges);
-    var cleanCounts = bins(cleanEst, edges);
-    var canvas = el("hist");
-    var dark = document.documentElement.getAttribute("data-theme") === "dark" ||
-      (document.documentElement.getAttribute("data-theme") !== "light" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
-    var grid = dark ? "#3a3f47" : "#ddd";
-    var tick = dark ? "#c9c9cf" : "#444";
-    if (window.Chart) {
-      if (chart) chart.destroy();
-      chart = new Chart(canvas.getContext("2d"), {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [
-            { label: "with hazards", data: hazCounts,
-              backgroundColor: "rgba(220,38,38,0.55)" },
-            { label: "clean design", data: cleanCounts,
-              backgroundColor: "rgba(120,120,140,0.45)" }
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            x: { ticks: { color: tick, maxTicksLimit: 8 },
-              grid: { color: grid },
-              title: { display: true, text: "estimated effect (B − A)", color: tick } },
-            y: { ticks: { color: tick }, grid: { color: grid },
-              title: { display: true, text: "% of experiments", color: tick } }
-          },
-          plugins: { legend: { labels: { color: tick } } }
-        }
-      });
-    } else {
-      drawFallback(canvas, hazCounts, cleanCounts, labels);
-    }
-  }
-
-  function drawFallback(canvas, hazCounts, cleanCounts, labels) {
-    var dpr = window.devicePixelRatio || 1;
-    var w = canvas.clientWidth, h = canvas.clientHeight;
-    canvas.width = w * dpr; canvas.height = h * dpr;
-    var ctx = canvas.getContext("2d");
-    ctx.scale(dpr, dpr);
-    var max = Math.max.apply(null, hazCounts.concat(cleanCounts)) * 1.15;
-    var bw = w / hazCounts.length;
-    ctx.fillStyle = "rgba(120,120,140,0.5)";
-    cleanCounts.forEach(function (c, i) {
-      var bh = (c / max) * (h - 24);
-      ctx.fillRect(i * bw + 1, h - 20 - bh, bw - 2, bh);
+    var labels = edges.slice(0, -1).map(function (e, i) {
+      return i % 5 === 0 ? e.toFixed(2) : "";
     });
-    ctx.fillStyle = "rgba(220,38,38,0.55)";
-    hazCounts.forEach(function (c, i) {
-      var bh = (c / max) * (h - 24);
-      ctx.fillRect(i * bw + bw * 0.25, h - 20 - bh, bw * 0.5, bh);
+    KitChart.makeBars(el("hist"), [
+      { label: "with hazards", color: "bad", values: bins(hazEst, edges) },
+      { label: "clean design", color: "neutral", values: bins(cleanEst, edges) }
+    ], {
+      labels: labels,
+      xTitle: "estimated effect (B − A)",
+      yTitle: "% of experiments",
+      yDigits: 1
     });
-    ctx.fillStyle = "#888";
-    ctx.font = "11px system-ui";
-    ctx.fillText("estimated effect −0.6 … +0.6 (red: with hazards · grey: clean)", 4, h - 4);
   }
 
   // --- Precomputed sweep table --------------------------------------------------
@@ -425,14 +382,12 @@
     })
     .catch(function () { /* table stays empty when data file is unavailable */ });
 
-  // --- Theme toggle ---------------------------------------------------------------
-  el("themeBtn").addEventListener("click", function () {
-    var root = document.documentElement;
-    var cur = root.getAttribute("data-theme");
-    var darkNow = cur === "dark" ||
-      (!cur && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    root.setAttribute("data-theme", darkNow ? "light" : "dark");
-  });
+  // --- Theme: kit-theme.js wires the header toggle; redraw on change ----
+  if (window.KitTheme) {
+    KitTheme.onChange(function () {
+      if (lastHist) drawHistogram(lastHist[0], lastHist[1], lastHist[2]);
+    });
+  }
 
   // Initial run: clean design.
   run();
