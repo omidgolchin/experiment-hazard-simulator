@@ -1,0 +1,471 @@
+{
+  "seed": 20261112,
+  "sweeps": {
+    "compute_bundling": {
+      "param": "compute_k",
+      "param_label": "best-of-k samples for condition B",
+      "points": [
+        {
+          "x": 1,
+          "rate": 0.04825,
+          "mc_se": 0.0033882863478460613,
+          "mean_estimate": -0.001815624999999999,
+          "n_exp": 4000
+        },
+        {
+          "x": 2,
+          "rate": 0.57075,
+          "mc_se": 0.007826149076972658,
+          "mean_estimate": 0.19909666666666667,
+          "n_exp": 4000
+        },
+        {
+          "x": 3,
+          "rate": 0.911,
+          "mc_se": 0.004502193909640054,
+          "mean_estimate": 0.29649041666666665,
+          "n_exp": 4000
+        },
+        {
+          "x": 4,
+          "rate": 0.984,
+          "mc_se": 0.00198393548282196,
+          "mean_estimate": 0.3556341666666667,
+          "n_exp": 4000
+        },
+        {
+          "x": 6,
+          "rate": 0.9985,
+          "mc_se": 0.0006119129840099706,
+          "mean_estimate": 0.4160432127192982,
+          "n_exp": 4000
+        },
+        {
+          "x": 8,
+          "rate": 1.0,
+          "mc_se": 0.0,
+          "mean_estimate": 0.4454077083333333,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "post_treatment_exclusion": {
+      "param": "err_excess",
+      "param_label": "excess error-out rate on hard tasks in B",
+      "points": [
+        {
+          "x": 0.0,
+          "rate": 0.0495,
+          "mc_se": 0.0034296410161998004,
+          "mean_estimate": -0.0010022916666666657,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.16,
+          "rate": 0.0515,
+          "mc_se": 0.0034945582696529753,
+          "mean_estimate": 0.00942002877787417,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.32,
+          "rate": 0.05475,
+          "mc_se": 0.003596958350467795,
+          "mean_estimate": 0.01529646225721303,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.48,
+          "rate": 0.06275,
+          "mc_se": 0.0038344633751021795,
+          "mean_estimate": 0.0279005792464079,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.64,
+          "rate": 0.06175,
+          "mc_se": 0.0038058158619407745,
+          "mean_estimate": 0.03961561303886816,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.8,
+          "rate": 0.09,
+          "mc_se": 0.004524930938699507,
+          "mean_estimate": 0.05812555668413543,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "differential_failure_handling": {
+      "param": "parse_fail_rate",
+      "param_label": "parse-failure rate (both arms)",
+      "points": [
+        {
+          "x": 0.0,
+          "rate": 0.0495,
+          "mc_se": 0.0034296410161998004,
+          "mean_estimate": -0.0012654166666666664,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.05,
+          "rate": 0.06075,
+          "mc_se": 0.0037768848771176492,
+          "mean_estimate": -0.02370300438596491,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.1,
+          "rate": 0.07975,
+          "mc_se": 0.004283396359782737,
+          "mean_estimate": -0.04591335526315788,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.15,
+          "rate": 0.1195,
+          "mc_se": 0.0051288339318016525,
+          "mean_estimate": -0.07275716008771929,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.2,
+          "rate": 0.19125,
+          "mc_se": 0.006218388808606294,
+          "mean_estimate": -0.10227177631578946,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.3,
+          "rate": 0.33675,
+          "mc_se": 0.007472439988049419,
+          "mean_estimate": -0.14947261208576995,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "pseudo_replication": {
+      "param": "sigma_task",
+      "param_label": "task-difficulty spread sigma_task (naive SE on)",
+      "points": [
+        {
+          "x": 0.0,
+          "rate": 0.05275,
+          "mc_se": 0.0035343824602043286,
+          "mean_estimate": -0.0006383339891250629,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.25,
+          "rate": 0.0515,
+          "mc_se": 0.0034945582696529753,
+          "mean_estimate": 0.0015125769043980687,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.5,
+          "rate": 0.078,
+          "mc_se": 0.004240165091125581,
+          "mean_estimate": -7.773212044140054e-05,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.75,
+          "rate": 0.09325,
+          "mc_se": 0.0045976743441657544,
+          "mean_estimate": -0.0011006593031053042,
+          "n_exp": 4000
+        },
+        {
+          "x": 1.0,
+          "rate": 0.12975,
+          "mc_se": 0.005313072028026724,
+          "mean_estimate": 0.00021640048660243337,
+          "n_exp": 4000
+        },
+        {
+          "x": 1.5,
+          "rate": 0.18725,
+          "mc_se": 0.006168213629163633,
+          "mean_estimate": 0.0014843612072690047,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "unblinded_judge": {
+      "param": "judge_bias",
+      "param_label": "judge bias b toward B (label visible)",
+      "points": [
+        {
+          "x": 0.0,
+          "rate": 0.0515,
+          "mc_se": 0.0034945582696529753,
+          "mean_estimate": 0.0023027083333333333,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.05,
+          "rate": 0.0615,
+          "mc_se": 0.003798609943123932,
+          "mean_estimate": 0.02794166666666667,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.1,
+          "rate": 0.07675,
+          "mc_se": 0.004208902395518337,
+          "mean_estimate": 0.04825833333333334,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.2,
+          "rate": 0.19975,
+          "mc_se": 0.006321588754023786,
+          "mean_estimate": 0.10087895833333334,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.3,
+          "rate": 0.39075,
+          "mc_se": 0.007714668455286981,
+          "mean_estimate": 0.15088937500000002,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.4,
+          "rate": 0.63475,
+          "mc_se": 0.007613186545396087,
+          "mean_estimate": 0.200385625,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "model_drift": {
+      "param": "drift",
+      "param_label": "logit shift halfway through B's block",
+      "points": [
+        {
+          "x": 0.0,
+          "rate": 0.046,
+          "mc_se": 0.0033122499905653257,
+          "mean_estimate": -0.000483333333333332,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.1,
+          "rate": 0.05125,
+          "mc_se": 0.0034865254014562978,
+          "mean_estimate": 0.011526875,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.2,
+          "rate": 0.05825,
+          "mc_se": 0.0037032734674879195,
+          "mean_estimate": 0.020026041666666675,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.3,
+          "rate": 0.06425,
+          "mc_se": 0.0038769168645974342,
+          "mean_estimate": 0.030423399122807022,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.5,
+          "rate": 0.08525,
+          "mc_se": 0.004415383264791404,
+          "mean_estimate": 0.048512708333333335,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.75,
+          "rate": 0.11925,
+          "mc_se": 0.005124193534108563,
+          "mean_estimate": 0.0729,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "prompt_cue": {
+      "param": "prompt_cue",
+      "param_label": "demand effect added to B's logit",
+      "points": [
+        {
+          "x": 0.0,
+          "rate": 0.0495,
+          "mc_se": 0.0034296410161998004,
+          "mean_estimate": 0.0032952083333333353,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.1,
+          "rate": 0.06325,
+          "mc_se": 0.0038486828103911084,
+          "mean_estimate": 0.02043833333333334,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.2,
+          "rate": 0.0685,
+          "mc_se": 0.00399398766898447,
+          "mean_estimate": 0.040064999999999996,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.3,
+          "rate": 0.096,
+          "mc_se": 0.004657896520963084,
+          "mean_estimate": 0.05955020833333333,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.5,
+          "rate": 0.185,
+          "mc_se": 0.006139523597153121,
+          "mean_estimate": 0.10018437500000002,
+          "n_exp": 4000
+        },
+        {
+          "x": 0.75,
+          "rate": 0.36925,
+          "mc_se": 0.00763060347384137,
+          "mean_estimate": 0.14818520833333335,
+          "n_exp": 4000
+        }
+      ]
+    },
+    "selective_reporting": {
+      "param": "n_outcomes",
+      "param_label": "outcomes measured (best one reported)",
+      "points": [
+        {
+          "x": 1,
+          "rate": 0.052,
+          "mc_se": 0.003510555511596419,
+          "mean_estimate": -0.0005933333333333333,
+          "n_exp": 4000
+        },
+        {
+          "x": 2,
+          "rate": 0.096,
+          "mc_se": 0.004657896520963084,
+          "mean_estimate": 0.0014674999999999988,
+          "n_exp": 4000
+        },
+        {
+          "x": 3,
+          "rate": 0.13875,
+          "mc_se": 0.005465767043608793,
+          "mean_estimate": -0.002974166666666666,
+          "n_exp": 4000
+        },
+        {
+          "x": 5,
+          "rate": 0.2295,
+          "mc_se": 0.006648867384750579,
+          "mean_estimate": -0.0011481250000000011,
+          "n_exp": 4000
+        },
+        {
+          "x": 8,
+          "rate": 0.3445,
+          "mc_se": 0.007513650078357389,
+          "mean_estimate": 0.0007758333333333327,
+          "n_exp": 4000
+        },
+        {
+          "x": 12,
+          "rate": 0.46175,
+          "mc_se": 0.0078825271566294,
+          "mean_estimate": -0.003435833333333336,
+          "n_exp": 4000
+        }
+      ]
+    }
+  },
+  "realistic": {
+    "compute_bundling": {
+      "rate": 0.9121,
+      "mc_se": 0.0028314941285476824,
+      "mean_estimate": 0.300286,
+      "n_exp": 10000
+    },
+    "post_treatment_exclusion": {
+      "rate": 0.0533,
+      "mc_se": 0.002246310530625719,
+      "mean_estimate": 0.02230635935063102,
+      "n_exp": 10000
+    },
+    "differential_failure_handling": {
+      "rate": 0.1285,
+      "mc_se": 0.003346457081750788,
+      "mean_estimate": -0.07548980263157894,
+      "n_exp": 10000
+    },
+    "pseudo_replication": {
+      "rate": 0.1282,
+      "mc_se": 0.003343123689007034,
+      "mean_estimate": 0.0004763603363726395,
+      "n_exp": 10000
+    },
+    "unblinded_judge": {
+      "rate": 0.1987,
+      "mc_se": 0.003990216911397173,
+      "mean_estimate": 0.10067758333333335,
+      "n_exp": 10000
+    },
+    "model_drift": {
+      "rate": 0.0777,
+      "mc_se": 0.0026769891669560413,
+      "mean_estimate": 0.049251570175438596,
+      "n_exp": 10000
+    },
+    "prompt_cue": {
+      "rate": 0.1377,
+      "mc_se": 0.00344584837159153,
+      "mean_estimate": 0.08008908333333334,
+      "n_exp": 10000
+    },
+    "selective_reporting": {
+      "rate": 0.2239,
+      "mc_se": 0.004168558383902041,
+      "mean_estimate": 0.001220416666666667,
+      "n_exp": 10000
+    }
+  },
+  "headline": {
+    "clean_fpr": {
+      "rate": 0.05,
+      "mc_se": 0.0021794494717703367,
+      "mean_estimate": -0.0006500833333333335,
+      "n_exp": 10000
+    },
+    "clean_power_delta_0.3": {
+      "rate": 0.1007,
+      "mc_se": 0.003009310718420416,
+      "mean_estimate": 0.05873250000000001,
+      "n_exp": 10000
+    },
+    "clean_power_delta_0.6": {
+      "rate": 0.2505,
+      "mc_se": 0.004333009923828931,
+      "mean_estimate": 0.11857800000000002,
+      "n_exp": 10000
+    },
+    "pseudo_sigma0_fpr": {
+      "rate": 0.053,
+      "mc_se": 0.0022403347964087867,
+      "mean_estimate": -0.00022385139068988887,
+      "n_exp": 10000
+    },
+    "two_hazards_fpr": {
+      "rate": 0.9734,
+      "mc_se": 0.001609112799029327,
+      "mean_estimate": 0.29901281200907204,
+      "n_exp": 10000
+    }
+  }
+}
