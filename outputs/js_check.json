@@ -1,0 +1,29 @@
+{
+  "n_exp": 20000,
+  "alpha": 0.05,
+  "settings": {
+    "clean": {
+      "overrides": {},
+      "fpr": 0.0514,
+      "mc_se": 0.0015613782373275222,
+      "mean_estimate": -0.0007984890350877177
+    },
+    "pseudo_replication": {
+      "overrides": {
+        "naive_se": true,
+        "sigma_task": 1
+      },
+      "fpr": 0.1292,
+      "mc_se": 0.0023717858250693717,
+      "mean_estimate": -0.0008037660935983677
+    },
+    "compute_bundling_k3": {
+      "overrides": {
+        "compute_k": 3
+      },
+      "fpr": 0.9124,
+      "mc_se": 0.0019990777873809713,
+      "mean_estimate": 0.2988485833333326
+    }
+  }
+}
