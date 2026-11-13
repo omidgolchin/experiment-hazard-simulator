@@ -1,0 +1,41 @@
+# Frozen configuration for experiment-hazard-simulator (see PLAN.md).
+# Mirrors the defaults in sim/model.py and docs/sim.js; the code defaults
+# are authoritative, this file records them for the freeze manifest.
+
+base_design:
+  n_tasks: 20          # tasks per condition
+  n_seeds: 5           # seeds per task
+  base_logit: 0.0      # baseline success rate = sigmoid(0) = 0.5
+  sigma_task: 1.0      # task-difficulty spread on the logit scale
+  sigma_noise: 0.5     # run-level noise on the logit scale
+  delta: 0.0           # true effect; 0 unless a power check
+  alpha: 0.05
+  err_base: 0.05       # flat run-level dropout in both arms (harmless)
+
+hazards_off:
+  compute_k: 1
+  err_excess: 0.0
+  parse_fail_rate: 0.0
+  parse_rule: b_wrong_a_missing
+  naive_se: false
+  judge_bias: 0.0
+  drift: 0.0
+  prompt_cue: 0.0
+  n_outcomes: 1
+
+sweeps:
+  experiments_per_point: 4000
+  headline_experiments: 10000
+  seed: 20261112
+
+js_agreement_check:
+  n_exp: 20000
+  seed: 20261112
+  settings:
+    clean: {}
+    pseudo_replication: {naive_se: true, sigma_task: 1.0}
+    compute_bundling_k3: {compute_k: 3}
+
+playground:
+  experiments_per_setting: 1000
+  chart_library: chart.js 4.4.1 (CDN, pinned)
