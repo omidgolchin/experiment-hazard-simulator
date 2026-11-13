@@ -9,6 +9,8 @@ Best-of-3 compute bundling alone produces a 91% false-positive rate.
 Post-treatment exclusion barely moves a study of this size: 5.3% against
 a clean 5.0%.
 
+![The playground in action: the clean design sits at a 5% false-positive rate, then the compute-bundling preset sends it to about 91%](docs/hero.gif)
+
 **All data in this repository and on the playground page are simulated.**
 No real experiment was run and no API was called.
 
