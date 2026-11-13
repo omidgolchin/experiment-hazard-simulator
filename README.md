@@ -1,11 +1,13 @@
 # Experiment hazard simulator
 
-When one design hazard slips into an experiment on LLM agents, how far off
-is the estimated effect, and how often does the study report a "significant"
-effect that does not exist? I built this simulator to put numbers on the
-eight hazards in my
+This simulator measures what eight design hazards do to an experiment on
+LLM agents. Each hazard comes from my
 [agent-experiment-methodology](https://github.com/omidgolchin/agent-experiment-methodology)
-skill — one toggle per hazard, one check per hazard.
+skill and gets one toggle and one check.
+
+Best-of-3 compute bundling alone produces a 91% false-positive rate.
+Post-treatment exclusion barely moves a study of this size: 5.3% against
+a clean 5.0%.
 
 **All data in this repository and on the playground page are simulated.**
 No real experiment was run and no API was called.
@@ -27,26 +29,32 @@ hazard at a realistic setting:
 - **Differential failure handling** (15% parse failures, wrong in B, missing in A): 13%, bias −0.07.
 - **Model drift** (+0.5 logit shift halfway through B's sequential block): 7.8%.
 - **Post-treatment exclusion** (B's hard tasks error out): 5.3% at this study
-  size — the mildest of the eight here; its bias (+0.02) is roughly constant
-  while standard errors shrink, so it bites harder in larger studies, and at
+  size, the mildest of the eight here. Its bias (+0.02) is roughly constant
+  while standard errors shrink, so it bites harder in larger studies. At
   the strongest setting I swept it reaches 9.0%.
 
 Two hazards at once (best-of-3 plus a naive standard error) give 97%. And
-one case is honestly harmless: pseudo-replication with homogeneous tasks
+one case is harmless: pseudo-replication with homogeneous tasks
 (σ_task = 0) stays at 5.3%, because with no task-level variance there is
 nothing for the naive standard error to miss. Full numbers, sweeps and
 Monte Carlo errors are in [results/summary.md](results/summary.md).
+
+The clean design is weak in the other direction. With 20 tasks it has
+10% power at a true effect of δ = 0.3, so a real effect of that size is
+missed nine times out of ten.
 
 ![False-positive rate vs hazard strength, one panel per hazard](results/figures/fpr_sweeps.png)
 
 ## Playground
 
-The playground runs the same simulation in your browser — 1,000 simulated
+The playground runs the same simulation in your browser: 1,000 simulated
 experiments per setting, hazards as toggles, presets for the clean design,
-each hazard, two hazards at once, and the harmless case above:
-**[open the playground](https://omidgolchin.github.io/experiment-hazard-simulator/)**
-(serve `docs/` locally if the Pages link is not live yet). Every active
-hazard shows the check that catches it, quoted with a link to the skill.
+each hazard, two hazards at once, and the harmless case above. The live
+link goes up when this repo becomes public:
+https://omidgolchin.github.io/experiment-hazard-simulator/
+Until then, serve `docs/` locally (see "Use the code" below). Every
+active hazard shows the check that catches it, quoted with a link to
+the skill.
 
 ## The eight hazards
 
@@ -87,7 +95,7 @@ Each condition runs on its own sample of T tasks with S seeds per task.
 Task difficulty is Normal(0, σ_task) on the logit scale; a run succeeds
 with probability sigmoid(base + difficulty + δ·B + noise). The correct
 analysis is the difference in success rates with a two-sample Welch
-standard error over per-task means — the task is the replication unit.
+standard error over per-task means. The task is the replication unit.
 Each hazard changes generation or analysis exactly as described in
 [PLAN.md](PLAN.md), which was frozen (with `FREEZE_MANIFEST.txt`) before
 the sweeps ran; deviations and judgement calls are in
@@ -96,18 +104,36 @@ the sweeps ran; deviations and judgement calls are in
 Two design notes matter. First, the task samples are *unpaired*: if both
 conditions ran on exactly the same tasks, difficulty would cancel in the
 paired difference and the naive pooled standard error would be
-conservative rather than anti-conservative — the pseudo-replication
+conservative rather than anti-conservative. The pseudo-replication
 inflation appears when each condition's task sample is its own draw.
 Second, exclusion is modelled at task level for B: run-level dropout is
 mostly absorbed by a task-mean analysis, while a hard task breaking the
 treated agent loses all of its runs together, which is what biases the
 estimate.
 
-The model is implemented twice — Python (`sim/`, NumPy) for the sweeps
-above and JavaScript (`docs/sim.js`) for the playground — and the test
-suite checks that the two agree on the false-positive rate within Monte
-Carlo error on three settings (clean, pseudo-replication, compute
-bundling; 20,000 experiments each).
+The model is implemented twice: Python (`sim/`, NumPy) for the sweeps
+above and JavaScript (`docs/sim.js`) for the playground. The test suite
+checks that the two agree on the false-positive rate within Monte Carlo
+error on three settings (clean, pseudo-replication, compute bundling;
+20,000 experiments each).
+
+## What I learned
+
+- Pseudo-replication surprised me. It inflates false positives only when
+  each condition draws its own task sample. Run both conditions on the
+  same tasks and the naive standard error turns conservative instead.
+- I modelled exclusion wrong the first time. Dropping single runs is
+  mostly absorbed by the per-task analysis. The bias appears when a hard
+  task breaks the treated agent and all of its runs are lost together,
+  so exclusion is modelled at task level.
+- The baseline test matters more than I expected. A z test put the clean
+  design at 6.4% false positives, which would have blurred every hazard's
+  number. A Welch t-test holds the clean rate at 5%, so the departures
+  belong to the hazards.
+- What I would do differently: read the skill's exact wording before
+  building. The skill repo was private when I built this, so the check
+  wordings come from the spec's summary of the skill. They may need
+  updating to match it word for word.
 
 ## Limitations
 
@@ -137,12 +163,12 @@ bundling; 20,000 experiments each).
 - Zheng, L., Chiang, W.-L., Sheng, Y., et al. (2023). Judging
   LLM-as-a-judge with MT-bench and Chatbot Arena. *NeurIPS 2023*, 36,
   46595–46623.
-- Golchin, O. agent-experiment-methodology skill — the audit checklist
+- Golchin, O. agent-experiment-methodology skill: the audit checklist
   this simulator is built from.
   https://github.com/omidgolchin/agent-experiment-methodology
 
 ## Citation and license
 
-Author: Omid Golchin. If you use this simulator, please cite it — see
+Author: Omid Golchin. If you use this simulator, please cite it. See
 [CITATION.cff](CITATION.cff). Code and text are released under the
 [MIT License](LICENSE).
