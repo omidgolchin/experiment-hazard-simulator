@@ -1,0 +1,21 @@
+# Freeze manifest — SHA-256 of the plan, config and code as frozen
+# before the main sweeps (see PLAN.md). Frozen: 2026-11-12
+
+c21217ceb8c176c4d40c9e73a05af96efa93ba369a7664da0978930cbe911be0  PLAN.md
+0657622143c6ed73fb5ce33b94f00d2ae3c37287517157f9ced30db49d9f09f2  config.yaml
+bb0f9bbd8e797aec446d7f41d13b515ddbcbf9da0bf7b5ff11416787312a0fe9  sim/__init__.py
+438a1f60a5ae265ab1402a248e278f3b9db019658930a80fa8b7b9928524f4c0  sim/model.py
+1a5b6e4911427e88f8d9cdfe83689ef6e3e3fc365a9d98ac895c4c4e7c26b743  sim/hazards.py
+98a363dfce5c8c991c290b113b86b2c243ff8c646418fb705848ebc37c6da814  sim/analyze.py
+3dc2c5e9d61eca7977d41a8339745972ac64be25df01baaa908336a7631bb454  sim/js_check.mjs
+5bf8aea74847dc34db0befcdcf27c761d14ab3315ab9b5f64cdb0049e859daf0  docs/sim.js
+46931c18858941f9af26ba74f4101b6fa0d29c26a97f270548c28d418e18814e  docs/app.js
+be358bc064bf73165840b99bc9df057a08e07b9614b9351cd99d63b4229a24d4  docs/index.html
+c50c8305f585c9551191788e47ab0cbebac1b54229902d72a7bd11ce8f5ae4b5  tests/conftest.py
+bd346987765e59938b3af15ae24674a35e5f8904578aa60d475c245f8e4aa517  tests/test_model.py
+1a77af4970506243ce923d45911232d64dffee9846cb9c07e3a59743ed04a733  tests/test_js_agreement.py
+
+# Amendment 2026-11-12: docs/app.js changed post-freeze (seed randomisation, see PLAN.md amendment log).
+# New SHA-256: 49fe294daa94388e86643653356cb45f4cd316bb114c6cd3cedb07037818296c  docs/app.js
+# Amendment 2026-11-12 (2): docs/index.html changed post-freeze (caption/CSS fix, see PLAN.md amendment log).
+# New SHA-256: 4302753eca5b95d60bb22ac606d5ceaf5c10ecc653fe4cad6ee20b8dbdb9a976  docs/index.html
