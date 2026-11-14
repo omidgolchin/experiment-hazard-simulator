@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this simulator, please cite it as below."
-title: "Experiment Hazard Simulator"
+title: "Agent Eval Planner: will your comparison of two agents give a trustworthy answer?"
 abstract: "An interactive Monte Carlo simulator showing how eight design hazards in LLM-agent experiments bias estimated effects and inflate false-positive rates, each paired with the check that catches it. All data are simulated."
 authors:
   - family-names: "Golchin"

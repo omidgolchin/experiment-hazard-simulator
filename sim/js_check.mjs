@@ -1,4 +1,4 @@
-// Run the JavaScript simulation core (docs/sim.js) on the three documented
+// Run the JavaScript simulation core (sim/hazard_sim.js) on the three documented
 // agreement-check settings and save the false-positive rates to
 // outputs/js_check.json. The Python test suite compares its own rates
 // against this file (tests/test_js_agreement.py).
@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-const sim = require("../docs/sim.js");
+const sim = require("../sim/hazard_sim.js");
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const nExp = Number(process.argv[2] || 20000);

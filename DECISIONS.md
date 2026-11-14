@@ -71,3 +71,12 @@ checkpoints; log and continue.)
    p-value. Real outcomes measured on the same runs would be correlated,
    which would make selective reporting *weaker*; independence is the
    clearer teaching case and is stated in the write-up.
+
+## 2026-11-13: v2, rebuilt as the Agent Eval Planner
+
+- The page demonstrated eight hazards with sliders and a precomputed table; it did not help anyone plan or check an eval. v2 does that job: plan (chance to detect, fake-win rate, tasks for 80%) and check (task-level interval from pasted results). The sweeps moved to Research notes.
+- New engine (`docs/evalsim.js`, NumPy reference `sim/planner.py`) adds the paired design: both versions on the same tasks, paired t-test on per-task differences. Paired is the default because shared benchmarks are the norm.
+- Fake wins count significant differences in either direction (sound design = 5%); chance to detect counts wins for B only.
+- Each "no" in the checklist is simulated alone to classify it as creating fake wins, costing power, or minor at these settings. Pooling attempts is conservative under pairing (costs power) and anti-conservative without it (fake wins); the tool shows which.
+- Tasks for 80% from the simulated spread of per-task differences, checked by simulated power (test: 80% +/- 3 points).
+- The original hazard engine moved to `sim/hazard_sim.js`; its JS/Python agreement test still runs.

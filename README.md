@@ -1,133 +1,59 @@
-# Experiment hazard simulator
+# Agent Eval Planner
 
-This simulator measures what eight design hazards do to an experiment on
-LLM agents. Each hazard comes from my
-[agent-experiment-methodology](https://github.com/omidgolchin/agent-experiment-methodology)
-skill and gets one toggle and one check.
+For anyone comparing two AI agents, prompts or models on a set of tasks: before you run the eval, see how likely it is to detect the improvement you care about, how likely it is to show a fake one, how many tasks you need, and which design choices to fix. After you run it, paste the results and get the honest interval.
 
-Best-of-3 compute bundling alone produces a 91% false-positive rate.
-Post-treatment exclusion barely moves a study of this size: 5.3% against
-a clean 5.0%.
+![The planner: a clean design that needs more tasks, then a design with retries for the new version and an unblinded judge, where fake wins jump to near 100%](docs/hero.gif)
 
-![The playground in action: the clean design sits at a 5% false-positive rate, then the compute-bundling preset sends it to about 91%](docs/hero.gif)
+![The planner with its checklist, verdict and power chart](docs/screenshots/desktop.png)
 
-**All data in this repository and on the playground page are simulated.**
-No real experiment was run and no API was called.
+**Use it:** https://omidgolchin.github.io/experiment-hazard-simulator/ (runs in your browser; nothing you type leaves it)
 
-## The result
+## What it does
 
-I simulated experiments that compare a control condition A and a treatment
-condition B on 20 tasks with 5 seeds each, with a true effect of zero, and
-counted how often each design reports a significant effect at α = 0.05. A
-clean design gives a false-positive rate of 5.0%, as it should. With one
-hazard at a realistic setting:
+- **Plan my eval.** Tasks, attempts per task, current success rate and the improvement you hope to detect give the chance to detect it, the tasks needed for 80%, and the fake-win rate of your design. An eight-question checklist covers the ways agent evals go wrong; each risky answer is simulated, so the verdict says what it costs.
+- **Check my results.** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version.
+- **Check my methods section.** Paste the write-up of an eval (yours or a paper's). A language model (your key, or copy the prompt into any assistant) answers the checklist from it, quoting the sentence behind each answer, and lists what the write-up never states. The simulation then scores the design.
+- **Copy design report.** A Markdown checklist with the numbers, ready for a paper appendix or a pull request.
 
-- **Compute bundling** (B gets best-of-3 attempts): 91% false positives,
-  mean estimated effect +0.30 on a success-rate scale where the truth is 0.
-- **Selective reporting** (best of 5 outcomes): 22%.
-- **Unblinded LLM judge** (judge upgrades 20% of B's failures): 20%, bias +0.10.
-- **Prompt cue** (demand effect of 0.4 on the logit scale): 14%.
-- **Pseudo-replication** (seeds counted as tasks, task spread σ = 1): 13%.
-- **Differential failure handling** (15% parse failures, wrong in B, missing in A): 13%, bias −0.07.
-- **Model drift** (+0.5 logit shift halfway through B's sequential block): 7.8%.
-- **Post-treatment exclusion** (B's hard tasks error out): 5.3% at this study
-  size, the mildest of the eight here. Its bias (+0.02) is roughly constant
-  while standard errors shrink, so it bites harder in larger studies. At
-  the strongest setting I swept it reaches 9.0%.
+## Built-in checks
 
-Two hazards at once (best-of-3 plus a naive standard error) give 97%. And
-one case is harmless: pseudo-replication with homogeneous tasks
-(σ_task = 0) stays at 5.3%, because with no task-level variance there is
-nothing for the naive standard error to miss. Full numbers, sweeps and
-Monte Carlo errors are in [results/summary.md](results/summary.md).
+| Check | What it catches |
+|---|---|
+| Compute parity | One version gets more attempts, retries or budget (best-of-k): a fake win almost every time. |
+| Crashes and timeouts | Dropping crashed runs or tasks for one version; the planner shows whether it biases the result or just costs power. |
+| Unparseable outputs | Different rules for unparseable outputs in each version. |
+| Unit of analysis | Pooling attempts as if independent. With separate task sets this inflates fake wins; with shared tasks it wastes power instead. The planner shows which. |
+| Judge blinding | An LLM judge that can see which version produced an output. |
+| Model drift | Versions run at different times or on a changed model. |
+| Prompt cue | Prompts that differ in more than the thing being tested. |
+| Metrics examined | Picking the best of several metrics after the fact. |
+| Tasks vs attempts | Whether more attempts per task can substitute for more tasks in your design. |
 
-The clean design is weak in the other direction. With 20 tasks it has
-10% power at a true effect of δ = 0.3, so a real effect of that size is
-missed nine times out of ten.
+## Design decisions
 
-![False-positive rate vs hazard strength, one panel per hazard](results/figures/fpr_sweeps.png)
+- **The task is the unit of analysis.** Attempts on the same task succeed or fail together, so the planner analyzes per-task success rates: a paired t-test when both versions run on the same tasks, Welch otherwise (Hurlbert 1984 on pseudo-replication).
+- **Paired by default.** Running both versions on the same tasks cancels task difficulty. The planner shows how many more tasks separate task sets would need.
+- **Every hazard is simulated, not just listed.** Each "no" in the checklist is run through the simulation alone, so the verdict separates hazards that create fake wins from ones that only cost power and ones that barely matter at your settings.
+- **Fake wins count significant differences in either direction**, so a sound design sits at 5%; the chance to detect counts only wins for the new version.
+- **Sample size from the simulated spread of per-task differences**, n = ((z₀.₉₇₅ + z₀.₈) · sd / gain)² + 1, checked against simulated power on the chart (tested: the formula's task count delivers 80% ± 3 points).
+- **Improvements in points, not log-odds.** You enter the improvement in success-rate points; the planner converts it to the model's scale by quadrature over task difficulty.
+- **The AI check only reads.** It answers the checklist from text and must quote its source; the statistics stay in code.
 
-## Playground
+## Validation
 
-The playground runs the same simulation in your browser: 1,000 simulated
-experiments per setting, hazards as toggles, presets for the clean design,
-each hazard, two hazards at once, and the harmless case above. The live
-link goes up when this repo becomes public:
-https://omidgolchin.github.io/experiment-hazard-simulator/
-Until then, serve `docs/` locally (see "Use the code" below). Every
-active hazard shows the check that catches it, quoted with a link to
-the skill.
-
-## The eight hazards
-
-| Hazard | What goes wrong | The check that catches it |
-|---|---|---|
-| Compute bundling | B also gets more attempts per task (best-of-k), so the estimate mixes the treatment with extra compute | Run a compute-matched arm: give the control the same steps and samples before crediting the treatment |
-| Post-treatment exclusion | Runs that hit an error are dropped after the fact, and B errors out on hard tasks, so B's surviving tasks are easier | Audit when exclusions happen and analyse intention-to-treat: every run you started counts |
-| Differential failure handling | Parse failures are counted as missing in one arm and as wrong in the other, so the same event moves only one rate | Use one failure rule in both arms: a parse failure is missing everywhere or wrong everywhere |
-| Pseudo-replication | Seeds are treated as independent tasks and a naive pooled standard error is used, so the sample looks S times larger than it is | Set the replication unit to the task: cluster standard errors by task, never count seeds as tasks |
-| Unblinded LLM judge | The judge sees the condition label and upgrades some of B's failures to successes | Blind the judge to condition labels and validate it against human labels before trusting its scores |
-| Model drift | Conditions run in sequence instead of interleaved, and the model version changes halfway through B, so the version change is credited to the treatment | Interleave the conditions and pin the model version for the whole run |
-| Prompt cue | B's prompt hints at the expected behaviour, adding a demand effect that is not the treatment | Diff the two prompts: they may differ only in the factor under test |
-| Selective reporting | Several outcomes are measured and only the most significant is reported, with no multiplicity correction | Pre-specify one primary outcome and correct for multiplicity across the rest |
-
-## Use the code
-
-```bash
-pip install -r requirements.txt
-
-python -m sim.analyze        # regenerate results/summary.md, figures, docs/data
-pytest                       # behavioural tests + JS/Python agreement test
-node sim/js_check.mjs        # regenerate the saved JS outputs used by the agreement test
-```
-
-```python
-from sim.model import Settings, simulate_experiments
-
-# True effect is zero; B quietly gets best-of-3 attempts.
-r = simulate_experiments(Settings(compute_k=3), n_exp=1000, seed=1)
-print(r["rate"], r["mean_estimate"])   # false-positive rate, mean estimate
-```
-
-Serve the playground locally with `python -m http.server -d docs 8000`.
-
-## How it was done
-
-Each condition runs on its own sample of T tasks with S seeds per task.
-Task difficulty is Normal(0, σ_task) on the logit scale; a run succeeds
-with probability sigmoid(base + difficulty + δ·B + noise). The correct
-analysis is the difference in success rates with a two-sample Welch
-standard error over per-task means. The task is the replication unit.
-Each hazard changes generation or analysis exactly as described in
-[PLAN.md](PLAN.md), which was frozen (with `FREEZE_MANIFEST.txt`) before
-the sweeps ran; deviations and judgement calls are in
-[DECISIONS.md](DECISIONS.md).
-
-Two design notes matter. First, the task samples are *unpaired*: if both
-conditions ran on exactly the same tasks, difficulty would cancel in the
-paired difference and the naive pooled standard error would be
-conservative rather than anti-conservative. The pseudo-replication
-inflation appears when each condition's task sample is its own draw.
-Second, exclusion is modelled at task level for B: run-level dropout is
-mostly absorbed by a task-mean analysis, while a hard task breaking the
-treated agent loses all of its runs together, which is what biases the
-estimate.
-
-The model is implemented twice: Python (`sim/`, NumPy) for the sweeps
-above and JavaScript (`docs/sim.js`) for the playground. The test suite
-checks that the two agree on the false-positive rate within Monte Carlo
-error on three settings (clean, pseudo-replication, compute bundling;
-20,000 experiments each).
+- **30 tests** (`pytest`): false alarms of the clean design at 5%; the sample-size formula delivering 80%; each hazard raising false alarms; pooling attempts inflating false alarms only without pairing; the JavaScript engine against the NumPy reference (`sim/planner.py`) on false alarms, power and effect sizes; the results checker against `scipy.stats.ttest_1samp`; detection of unequal compute and unmatched tasks; the original hazard simulator's JS/Python agreement; the AI check's prompt and reply handling.
+- **AI check extraction:** a 20-item test set of methods paragraphs (`assist/testset.json`), from careful to careless to silent. Score any model with `ANTHROPIC_API_KEY=... node scripts/eval_assist.js`. Not yet run for this release.
+- Checked on desktop and phone widths, in light and dark themes.
 
 ## What I learned
 
 - Pseudo-replication surprised me. It inflates false positives only when
   each condition draws its own task sample. Run both conditions on the
   same tasks and the naive standard error turns conservative instead.
-- I modelled exclusion wrong the first time. Dropping single runs is
+- I modeled exclusion wrong the first time. Dropping single runs is
   mostly absorbed by the per-task analysis. The bias appears when a hard
   task breaks the treated agent and all of its runs are lost together,
-  so exclusion is modelled at task level.
+  so exclusion is modeled at task level.
 - The baseline test matters more than I expected. A z test put the clean
   design at 6.4% false positives, which would have blurred every hazard's
   number. A Welch t-test holds the clean rate at 5%, so the departures
@@ -137,18 +63,33 @@ error on three settings (clean, pseudo-replication, compute bundling;
   wordings come from the spec's summary of the skill. They may need
   updating to match it word for word.
 
+## Research notes
+
+The simulation studies behind the tool, kept out of it on purpose. Full numbers in [results/summary.md](results/summary.md). All data are simulated.
+
+- **Each hazard alone, at a realistic strength** (20 tasks, 5 attempts, no real effect): best-of-3 for the new version gave fake wins in 91% of evals; an unblinded judge upgrading 20% of failures, 20%; selective reporting of the best of 5 metrics, 22%; dropping crashed hard tasks, about 5% (it costs power, not validity). ![False-positive rate against hazard strength](results/figures/fpr_sweeps.png)
+- **Small agent studies miss real effects too.** At 20 tasks the clean design detected a modest real effect only 10% of the time.
+
+## Run it
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pytest -q          # all tests (needs node for the JavaScript checks)
+cd docs && python3 -m http.server 8000  # the tool at http://localhost:8000
+.venv/bin/python -m sim.analyze         # regenerate results/ (research notes)
+```
+
+## Layout
+
+- `docs/`: the tool (plain HTML and JavaScript, no build step). `evalsim.js` is the engine (simulation, sample size, results checker); `tool-common.js` and `tool.css` the shared tool kit; `assist-config.js` the AI check's prompt.
+- `sim/planner.py`: NumPy reference for the engine. `sim/model.py`, `sim/hazard_sim.js`, `sim/analyze.py`: the hazard sweeps in Research notes.
+- `assist/` and `scripts/eval_assist.js`: the AI check's test set and scorer.
+
 ## Limitations
 
-- This is a teaching model, not a measurement of real experiments. The
-  hazard strengths are parameters I chose; real studies will sit at
-  unknown points on each sweep.
-- Success is a single Bernoulli outcome per run. Real agent tasks have
-  graded scores, partial credit and correlated failure modes.
-- Each hazard is modelled in its simplest form (for example, the judge's
-  bias is a flat upgrade probability; drift is a single step change).
-  Real versions can be larger, smaller, or interact.
-- The eight hazards act one or two at a time here. Real studies can have
-  several at once, in either direction.
+- Binary success per attempt; graded scores need a different model.
+- One improvement size and one baseline rate per plan; real improvements vary by task.
+- Hazard strengths are illustrative defaults you can change; the checklist cannot know how strong a hazard is in your setup, only that it is there.
 
 ## References
 

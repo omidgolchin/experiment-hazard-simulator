@@ -6,7 +6,7 @@ Writes:
 - outputs/sweep_results.json   full sweep + headline numbers
 - results/summary.md           the write-up tables
 - results/figures/fpr_sweeps.png / .pdf   FPR vs hazard strength, 8 panels
-- docs/data/sweep.json         compact copy for the playground
+- results/data/sweep.json      compact copy of the sweeps
 
 All numbers come from sim.model at the settings frozen in PLAN.md /
 config.yaml. Everything is simulated; there is no empirical data.
@@ -181,7 +181,7 @@ def _write_playground_data(results: dict) -> None:
         "realistic": results["realistic"],
         "sweeps": results["sweeps"],
     }
-    path = ROOT / "docs" / "data" / "sweep.json"
+    path = ROOT / "results" / "data" / "sweep.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(compact, indent=1) + "\n")
 
