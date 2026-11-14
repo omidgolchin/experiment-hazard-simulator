@@ -3,7 +3,7 @@ rate within Monte Carlo error on three documented settings (PLAN.md).
 
 The JS side is the saved output of `node sim/js_check.mjs`
 (outputs/js_check.json, committed). This test recomputes the Python side
-and compares. Regenerate the JS side after any change to docs/sim.js.
+and compares. Regenerate the JS side after any change to sim/hazard_sim.js.
 """
 
 import json

@@ -1,147 +1,150 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Experiment Hazard Simulator — how one design slip fakes an effect</title>
-<meta name="description" content="Interactive simulator: eight design hazards in LLM-agent experiments, each shown as its false-positive rate. All data are simulated.">
+<title>Agent Eval Planner: will your comparison give a trustworthy answer?</title>
+<meta name="description" content="Before you compare two AI agents, prompts or models on a set of tasks: how likely your eval is to detect a real improvement, how likely it is to show a fake one, how many tasks you need, and which design choices to fix. Plus a checker for results you already have.">
 <script src="kit-theme.js"></script>
 <link rel="stylesheet" href="kit.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="tool.css">
 <style>
-  /* Tool-specific only: the kit has no live-status line. */
-  #progress { min-height: 1.4em; }
+  .qlist { display: grid; gap: 8px; margin-top: 4px; }
+  .q { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; background: var(--card); }
+  .q.unsafe { border-color: var(--series-2); }
+  .q-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .q-text { font-size: var(--fs-small); }
+  .q select { flex: 0 0 auto; font-size: var(--fs-small); }
+  .q .ctl { margin-top: 6px; }
+  .q .ctl label { color: var(--muted); }
+  textarea.csv { width: 100%; min-height: 150px; font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--fg); background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; }
 </style>
 </head>
 <body>
 <main>
   <header class="kit-header">
     <div class="kit-header-top">
-      <p class="kit-kicker">Omid Golchin · learning tools</p>
-      <button class="kit-theme-toggle" type="button" data-kit-theme-toggle
-        aria-label="Toggle light/dark mode">◐ Theme</button>
+      <p class="kit-kicker">Omid Golchin · Decision tools</p>
+      <button type="button" class="kit-theme-toggle" aria-pressed="false">◐ Theme</button>
     </div>
-    <h1>Experiment Hazard Simulator</h1>
-    <p class="kit-tagline">Eight design hazards in LLM-agent experiments,
-    each shown as the false-positive rate it produces — toggle one on and
-    watch a clean study go wrong.</p>
+    <h1>Agent Eval Planner</h1>
+    <p class="kit-tagline">Before you compare two agents, prompts or models on a set of tasks: will the eval detect a real improvement, and how likely is it to show a fake one?</p>
   </header>
 
-  <p><span class="chip">All data on this page are simulated</span></p>
-
-  <p class="claim"><strong>Claim:</strong> one design hazard slipping into an
-  agent experiment is enough to produce confident, wrong “significant”
-  results at realistic settings — and each hazard is caught by one specific
-  check. Toggle hazards below and watch the false-positive rate move.</p>
-  <p>The simulator runs 1,000 simulated experiments per setting in your
-  browser. An experiment compares condition A and B on a sample of tasks
-  with several seeds each; the true effect is whatever you set
-  (default&nbsp;0, so every “significant” result is a false alarm). The grey
-  comparison is always the same design with all hazards off.</p>
-
-  <h2>Presets</h2>
-  <div class="presets" id="presets"></div>
-
-  <h2>Design</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>Base design</h3>
-      <div class="ctl"><label for="nTasks">Tasks per condition</label>
-        <input type="range" id="nTasks" min="10" max="50" step="5" value="20"><output id="nTasksV">20</output></div>
-      <div class="ctl"><label for="nSeeds">Seeds per task</label>
-        <input type="range" id="nSeeds" min="1" max="10" step="1" value="5"><output id="nSeedsV">5</output></div>
-      <div class="ctl"><label for="sigmaTask">Task-difficulty spread σ<sub>task</sub></label>
-        <input type="range" id="sigmaTask" min="0" max="1.5" step="0.25" value="1"><output id="sigmaTaskV">1.00</output></div>
-      <div class="ctl"><label for="delta">True effect δ (logit)</label>
-        <input type="range" id="delta" min="0" max="0.6" step="0.1" value="0"><output id="deltaV">0.0</output></div>
-      <p>Baseline success rate 50%; two-sided test at α = 0.05 with a
-      cluster-by-task (Welch) standard error — unless a hazard changes the
-      analysis.</p>
-    </div>
-    <div class="card">
-      <h3>How to read the results</h3>
-      <p>With δ = 0 the headline number is the <strong>false-positive
-      rate</strong>: how often the study claims an effect that does not
-      exist. A clean design gives ≈ 5%. With δ &gt; 0 it is
-      <strong>power</strong>. The histogram shows the distribution of
-      estimated effects (success-rate difference, B − A) across the 1,000
-      experiments, with the clean design overlaid.</p>
-      <p>Each active hazard also shows the check that catches it, quoted
-      from my <a href="https://github.com/omidgolchin/agent-experiment-methodology" target="_blank" rel="noopener">agent-experiment-methodology</a> skill.</p>
-    </div>
+  <div class="tool-modes" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" id="tab-plan" class="active" aria-selected="true">Plan my eval</button>
+    <button type="button" role="tab" id="tab-check" aria-selected="false">Check my results</button>
   </div>
 
-  <h2>Hazards</h2>
-  <div class="grid" id="hazardGrid"></div>
-
-  <p>
-    <button id="runBtn" class="btn-primary" type="button">Run 1,000 experiments</button>
-    <span id="progress" class="muted" role="status"></span>
-  </p>
-
-  <div class="stats">
-    <div class="card stat stat-center">
-      <div class="big" id="rateHazard">–</div>
-      <div class="lbl" id="rateHazardLbl">with the hazards above</div>
-      <div class="lbl" id="meanHazard"></div>
+  <!-- ================= PLAN ================= -->
+  <section id="view-plan">
+    <div class="work">
+      <form class="panel" novalidate onsubmit="return false">
+        <div class="panel-head"><h2>Your eval</h2>
+          <select class="example" id="example" aria-label="Load an example"><option value="">Load example…</option></select></div>
+        <div class="fields">
+          <div class="field"><label for="tasks">Tasks</label><input id="tasks" type="number" min="5" max="2000" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="attempts">Attempts per task, per version</label><input id="attempts" type="number" min="1" max="20" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="rate">Current success rate</label><div class="input-wrap"><input id="rate" type="number" min="1" max="99" step="any"><span class="unit">%</span></div></div>
+          <div class="field"><label for="gain">Improvement you hope to detect</label><div class="input-wrap"><input id="gain" type="number" min="0.5" max="50" step="any"><span class="unit">pts</span></div></div>
+          <div class="field"><label for="spread">How different are the tasks?</label><select id="spread"><option value="0.5">Similar difficulty</option><option value="1">Mixed</option><option value="2">Very mixed (some trivial, some impossible)</option></select></div>
+          <div class="field"><label for="paired">Both versions on the same tasks?</label><select id="paired"><option value="1">Yes</option><option value="0">No, separate task sets</option></select></div>
+        </div>
+        <h2 style="margin:18px 0 6px">Design checklist</h2>
+        <p class="footnote" style="margin:0 0 6px">Answer for your setup. Each risky answer is simulated, so the verdict shows what it costs.</p>
+        <div class="qlist" id="qlist"></div>
+        <div class="actions" style="margin-top:12px">
+          <button type="button" id="assistToggle">✦ Check my methods section</button>
+          <span class="footnote">Paste your eval's write-up; an AI model answers the checklist from it, quoting each sentence, and lists what the write-up never says.</span>
+        </div>
+        <div id="assistMount"></div>
+      </form>
+      <div>
+        <section class="panel verdict" id="verdict" aria-live="polite">
+          <p class="v-kicker">Verdict</p>
+          <p class="v-title" id="vTitle">…</p>
+          <p class="v-body" id="vBody"></p>
+          <div class="kpis" id="kpis"></div>
+          <div class="checks" id="checks"></div>
+        </section>
+        <div class="actions">
+          <button type="button" id="copyReport">Copy design report</button>
+          <button type="button" id="copyLink">Copy link</button>
+          <span class="toast" id="toast"></span>
+        </div>
+      </div>
     </div>
-    <div class="card stat stat-center">
-      <div class="big good-text" id="rateClean">–</div>
-      <div class="lbl" id="rateCleanLbl">clean design, same settings</div>
-      <div class="lbl" id="meanClean"></div>
+    <section class="panel" style="margin-top:16px">
+      <h2>Chance to detect the improvement, by number of tasks</h2>
+      <div class="svgchart" id="powerChart"></div>
+      <p class="chart-caption" id="powerCaption"></p>
+    </section>
+    <details class="more">
+      <summary>How the verdict is computed <span class="sub">model, simulation, sources</span></summary>
+      <div class="more-body small">
+        <p><b>Model.</b> Each task has a difficulty (normal on the log-odds scale; "similar", "mixed" and "very mixed" are standard deviations of 0.5, 1 and 2), and each attempt adds noise (0.5). Version B's improvement is set so that the average success rate rises by the points you entered. Your current success rate sets the baseline.</p>
+        <p><b>Analysis.</b> With the same tasks for both versions: a paired t-test on per-task differences in success rate, because the task, not the attempt, is the unit that varies. With separate task sets: a Welch t-test on per-task success rates.</p>
+        <p><b>Chance to detect</b> is the share of 2,000 simulated evals of the clean design (no risky answers) that find B significantly better at the 5% level. <b>Fake wins</b> is the share of simulated evals with no real difference that find a significant one, with your checklist answers applied; a sound design sits near 5%. <b>Tasks for 80%</b> comes from the standard formula n = ((z<sub>0.975</sub> + z<sub>0.8</sub>) · sd / gain)², with sd the simulated spread of per-task differences, and the chart confirms it by simulation.</p>
+        <div class="formula" id="designEffect"></div>
+        <p>The checklist is the hazard list of the <a href="https://github.com/omidgolchin/agent-experiment-methodology">agent-experiment-methodology</a> skill (<a href="https://github.com/omidgolchin/agent-experiment-methodology/blob/main/references/agent-hazards.md">agent-hazards.md</a>), each with the check that catches it. Background: Hurlbert (1984) on pseudo-replication; Simmons, Nelson &amp; Simonsohn (2011) on selective reporting; Panickssery, Bowman &amp; Feng (2024) on LLM judges favoring their own outputs.</p>
+        <p class="footnote">The simulation studies behind this tool (how each hazard's false-alarm rate grows with its strength) are in <a href="https://github.com/omidgolchin/experiment-hazard-simulator#research-notes">Research notes</a>. All data on this page are simulated.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ================= CHECK ================= -->
+  <section id="view-check" hidden>
+    <div class="work">
+      <form class="panel" novalidate onsubmit="return false">
+        <div class="panel-head"><h2>Your results</h2>
+          <button type="button" id="loadExample">Load example results</button></div>
+        <div class="field"><label for="csv">One row per attempt: task, version, attempt, success (1 or 0)</label>
+          <textarea class="csv" id="csv" spellcheck="false" placeholder="task,version,attempt,success&#10;t01,A,1,1&#10;t01,A,2,0&#10;t01,B,1,1&#10;..."></textarea>
+          <div class="hint">Paste from a spreadsheet or CSV. A header row is optional; extra columns are ignored. "pass/fail" and "true/false" also work.</div></div>
+        <div class="fields" style="margin-top:10px">
+          <div class="field"><label for="baseline">Which version is the baseline?</label><select id="baseline"></select></div>
+          <div class="field"><label for="upload">Or upload a CSV</label><input id="upload" type="file" accept=".csv,text/csv,text/plain"></div>
+        </div>
+      </form>
+      <div>
+        <section class="panel verdict v-neutral" id="cVerdict" aria-live="polite">
+          <p class="v-kicker">Result</p>
+          <p class="v-title" id="cTitle">Paste results to check them</p>
+          <p class="v-body" id="cBody">Or press Load example results.</p>
+          <div class="kpis" id="cKpis"></div>
+          <div class="checks" id="cChecks"></div>
+        </section>
+        <div class="actions">
+          <button type="button" id="cCopy">Copy summary</button>
+          <span class="toast" id="cToast"></span>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="chart"><canvas id="hist"></canvas></div>
-    <p class="chart-caption">Distribution of estimated
-    effects across 1,000 simulated experiments (red: current settings ·
-    grey: clean design). Zero is the true effect when δ = 0.</p>
-  </div>
-
-  <h2>The check that catches each active hazard</h2>
-  <div id="checks"><p class="muted">No hazards are on — this is
-  the clean design. Its false-positive rate should sit near 5%.</p></div>
-
-  <h2>Precomputed sweeps (Python model)</h2>
-  <p class="muted small">The same model in Python,
-  10,000 experiments per hazard at a realistic setting, true effect 0. The
-  JavaScript on this page and the Python model agree within Monte Carlo
-  error (checked in the repo’s test suite).</p>
-  <div class="card table-scroll">
-    <table id="sweepTable">
-      <thead><tr><th>Hazard</th><th>Realistic setting</th><th>False-positive rate</th><th>Mean estimate</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <section class="panel" style="margin-top:16px">
+      <h2>The same results, analyzed two ways</h2>
+      <div class="svgchart" id="checkChart"></div>
+      <p class="chart-caption" id="checkCaption"></p>
+    </section>
+    <details class="more">
+      <summary>How the results are analyzed <span class="sub">paired by task, bootstrap</span></summary>
+      <div class="more-body small">
+        <p>Each task's success rate is computed for each version, and the analysis runs on the per-task differences: a paired t-interval and, as a check that does not assume normality, a percentile bootstrap that resamples tasks (2,000 resamples). Tasks that ran on only one version are left out and listed.</p>
+        <p>The "attempts as independent" interval is what you get by pooling all attempts into two success rates. Attempts on the same task are correlated, so that interval is usually too narrow when the versions ran on different tasks; with shared tasks it can also be too wide, because it ignores the pairing. Either way it answers the wrong question.</p>
+      </div>
+    </details>
+  </section>
 
   <footer class="kit-footer">
-    <nav class="kit-siblings" aria-label="More tools">
-      <span class="kit-siblings-label">More tools:</span>
-      <a href="https://omidgolchin.github.io/experiment-hazard-simulator/" aria-current="page">Experiment Hazard Simulator</a> ·
-      <a href="https://omidgolchin.github.io/bayesian-ab-lab/">Bayesian A/B Lab</a> ·
-      <a href="https://omidgolchin.github.io/queue-simulator/">Queue Simulator</a>
-    </nav>
-    <p>Built by Omid Golchin. Shared design:
-      <a href="https://github.com/omidgolchin/omid-tools-kit">omid-tools-kit</a>.</p>
+    <p class="kit-siblings"><span class="kit-siblings-label">More tools:</span>
+      <a href="https://omidgolchin.github.io/bayesian-ab-lab/">A/B Test Decision Tool</a> ·
+      <a href="https://omidgolchin.github.io/queue-simulator/">Call Center Staffing Planner</a> ·
+      <a href="https://omidgolchin.github.io/experiment-hazard-simulator/" aria-current="page">Agent Eval Planner</a></p>
+    <p>Built by Omid Golchin · <a href="https://github.com/omidgolchin/experiment-hazard-simulator">Code, tests and design decisions</a> · Everything runs in your browser; nothing you type is sent anywhere unless you use the AI check with your own key.</p>
   </footer>
-  <p class="muted small">Code and full write-up:
-  <a href="https://github.com/omidgolchin/experiment-hazard-simulator" target="_blank" rel="noopener">github.com/omidgolchin/experiment-hazard-simulator</a> ·
-  Hazard checks from the
-  <a href="https://github.com/omidgolchin/agent-experiment-methodology" target="_blank" rel="noopener">agent-experiment-methodology</a> skill
-  (<a href="https://github.com/omidgolchin/agent-experiment-methodology/blob/main/references/agent-hazards.md" target="_blank" rel="noopener">agent-hazards.md</a>).</p>
-  <p class="muted small">References: Hurlbert (1984), Pseudoreplication and the design of
-  ecological field experiments, <em>Ecological Monographs</em> 54(2) ·
-  Simmons, Nelson &amp; Simonsohn (2011), False-positive psychology,
-  <em>Psychological Science</em> 22(11) · Panickssery, Bowman &amp; Feng
-  (2024), LLM evaluators recognize and favor their own generations,
-  <em>NeurIPS 2024</em>.</p>
-  <p class="muted small">All results on this page and in the repository are from simulated
-  data generated by the model described in the write-up. No real
-  experiments were run.</p>
 </main>
-<script src="sim.js"></script>
-<script src="kit-chart.js"></script>
+<script src="evalsim.js"></script>
+<script src="tool-common.js"></script>
+<script src="assist-config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
