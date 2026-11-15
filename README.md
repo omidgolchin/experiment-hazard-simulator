@@ -2,9 +2,9 @@
 
 For anyone comparing two AI agents, prompts or models on a set of tasks: before you run the eval, see how likely it is to detect the improvement you care about, how likely it is to show a fake one, how many tasks you need, and which design choices to fix. After you run it, paste the results and get the honest interval.
 
-![The planner: a clean design that needs more tasks, then a design with retries for the new version and an unblinded judge, where fake wins jump to near 100%](docs/hero.gif)
+![The planner on three eval designs (a small benchmark; retries for the new version and an unblinded judge, where fake wins jump; separate task sets with pooled attempts), the explanation behind one checklist item, and the results checker](docs/hero.gif)
 
-![The planner with its checklist, verdict and power chart](docs/screenshots/desktop.png)
+![The planner on a desktop: the three-step guide, the inputs with a hint under each, and the verdict](docs/screenshots/desktop.png)
 
 **Use it:** https://omidgolchin.github.io/experiment-hazard-simulator/ (runs in your browser; nothing you type leaves it)
 
@@ -14,6 +14,7 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
 - **Check my results.** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version.
 - **Check my methods section.** Paste the write-up of an eval (yours or a paper's). A language model (your key, or copy the prompt into any assistant) answers the checklist from it, quoting the sentence behind each answer, and lists what the write-up never states. The simulation then scores the design.
 - **Copy design report.** A Markdown checklist with the numbers, ready for a paper appendix or a pull request.
+- **Help where you need it.** Each mode opens with three steps saying what to enter and what you get; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
 
 ## Built-in checks
 

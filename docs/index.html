@@ -31,26 +31,34 @@
     <p class="kit-tagline">Before you compare two agents, prompts or models on a set of tasks: will the eval detect a real improvement, and how likely is it to show a fake one?</p>
   </header>
 
-  <div class="tool-modes" role="tablist" aria-label="Mode">
+  <div class="tool-modes" role="tablist" aria-label="What do you want to do?">
     <button type="button" role="tab" id="tab-plan" class="active" aria-selected="true">Plan my eval</button>
     <button type="button" role="tab" id="tab-check" aria-selected="false">Check my results</button>
   </div>
 
   <!-- ================= PLAN ================= -->
-  <section id="view-plan">
+  <section id="view-plan" role="tabpanel" aria-labelledby="tab-plan">
+    <div class="guide" aria-label="How to use this mode">
+      <ol class="steps">
+        <li><b>Describe the eval</b> you plan to run: how many tasks, how many attempts each, and the improvement you hope to see.</li>
+        <li><b>Answer the design checklist</b>. Each "No" is simulated, so you see how much it inflates fake wins.</li>
+        <li><b>Read the verdict</b>: whether the eval can detect a real improvement, how many tasks it needs, and what to fix first.</li>
+      </ol>
+      <p class="also"><b>Also here:</b> <i>Check my results</i> analyzes runs you already have · <i>Check my methods section</i> answers the checklist from a pasted write-up · <i>Copy design report</i> gives a summary for a paper or a review.</p>
+    </div>
     <div class="work">
       <form class="panel" novalidate onsubmit="return false">
         <div class="panel-head"><h2>Your eval</h2>
           <select class="example" id="example" aria-label="Load an example"><option value="">Load example…</option></select></div>
         <div class="fields">
-          <div class="field"><label for="tasks">Tasks</label><input id="tasks" type="number" min="5" max="2000" step="1" inputmode="numeric"></div>
-          <div class="field"><label for="attempts">Attempts per task, per version</label><input id="attempts" type="number" min="1" max="20" step="1" inputmode="numeric"></div>
-          <div class="field"><label for="rate">Current success rate</label><div class="input-wrap"><input id="rate" type="number" min="1" max="99" step="any"><span class="unit">%</span></div></div>
-          <div class="field"><label for="gain">Improvement you hope to detect</label><div class="input-wrap"><input id="gain" type="number" min="0.5" max="50" step="any"><span class="unit">pts</span></div></div>
-          <div class="field"><label for="spread">How different are the tasks?</label><select id="spread"><option value="0.5">Similar difficulty</option><option value="1">Mixed</option><option value="2">Very mixed (some trivial, some impossible)</option></select></div>
-          <div class="field"><label for="paired">Both versions on the same tasks?</label><select id="paired"><option value="1">Yes</option><option value="0">No, separate task sets</option></select></div>
+          <div class="field"><label for="tasks">Tasks <button type="button" data-tip="tasks"></button></label><input id="tasks" type="number" min="5" max="2000" step="1" inputmode="numeric"><div class="hint">Distinct problems in your eval set. This is usually what limits precision, more than attempts.</div></div>
+          <div class="field"><label for="attempts">Attempts per task, per version <button type="button" data-tip="attempts"></button></label><input id="attempts" type="number" min="1" max="20" step="1" inputmode="numeric"><div class="hint">Runs of each task per version. Agents are random, so repeats average out luck on each task.</div></div>
+          <div class="field"><label for="rate">Current success rate</label><div class="input-wrap"><input id="rate" type="number" min="1" max="99" step="any"><span class="unit">%</span></div><div class="hint">Share of tasks the current version solves. If unsure, use 50%, the hardest case.</div></div>
+          <div class="field"><label for="gain">Improvement you hope to detect <button type="button" data-tip="gain"></button></label><div class="input-wrap"><input id="gain" type="number" min="0.5" max="50" step="any"><span class="unit">pts</span></div><div class="hint">In percentage points: 50% → 60% is +10. The smallest change you would act on.</div></div>
+          <div class="field"><label for="spread">How different are the tasks? <button type="button" data-tip="spread"></button></label><select id="spread"><option value="0.5">Similar difficulty</option><option value="1">Mixed</option><option value="2">Very mixed (some trivial, some impossible)</option></select><div class="hint">If some tasks are trivial and others impossible, task-to-task differences add noise.</div></div>
+          <div class="field"><label for="paired">Both versions on the same tasks? <button type="button" data-tip="paired"></button></label><select id="paired"><option value="1">Yes</option><option value="0">No, separate task sets</option></select><div class="hint">Running both versions on the same tasks cancels out task difficulty and needs far fewer tasks.</div></div>
         </div>
-        <h2 style="margin:18px 0 6px">Design checklist</h2>
+        <h2 style="margin:18px 0 6px">Design checklist <button type="button" data-tip="checklist"></button></h2>
         <p class="footnote" style="margin:0 0 6px">Answer for your setup. Each risky answer is simulated, so the verdict shows what it costs.</p>
         <div class="qlist" id="qlist"></div>
         <div class="actions" style="margin-top:12px">
@@ -75,7 +83,7 @@
       </div>
     </div>
     <section class="panel" style="margin-top:16px">
-      <h2>Chance to detect the improvement, by number of tasks</h2>
+      <h2>Chance to detect the improvement, by number of tasks <button type="button" data-tip="power"></button></h2>
       <div class="svgchart" id="powerChart"></div>
       <p class="chart-caption" id="powerCaption"></p>
     </section>
@@ -93,7 +101,15 @@
   </section>
 
   <!-- ================= CHECK ================= -->
-  <section id="view-check" hidden>
+  <section id="view-check" role="tabpanel" aria-labelledby="tab-check" hidden>
+    <div class="guide" aria-label="How to use this mode">
+      <ol class="steps">
+        <li><b>Paste your runs</b>: one row per attempt, with the task, the version, and whether it succeeded.</li>
+        <li><b>Pick the baseline</b> version you are comparing against.</li>
+        <li><b>Read the result</b>: the difference with an honest interval, analyzed per task. The chart shows why pooling attempts overstates certainty.</li>
+      </ol>
+      <p class="also"><b>Also here:</b> <i>Load example results</i> shows the expected format.</p>
+    </div>
     <div class="work">
       <form class="panel" novalidate onsubmit="return false">
         <div class="panel-head"><h2>Your results</h2>
@@ -102,8 +118,8 @@
           <textarea class="csv" id="csv" spellcheck="false" placeholder="task,version,attempt,success&#10;t01,A,1,1&#10;t01,A,2,0&#10;t01,B,1,1&#10;..."></textarea>
           <div class="hint">Paste from a spreadsheet or CSV. A header row is optional; extra columns are ignored. "pass/fail" and "true/false" also work.</div></div>
         <div class="fields" style="margin-top:10px">
-          <div class="field"><label for="baseline">Which version is the baseline?</label><select id="baseline"></select></div>
-          <div class="field"><label for="upload">Or upload a CSV</label><input id="upload" type="file" accept=".csv,text/csv,text/plain"></div>
+          <div class="field"><label for="baseline">Which version is the baseline? <button type="button" data-tip="baseline"></button></label><select id="baseline"></select><div class="hint">The version you are trying to beat. Differences are reported as other version minus baseline.</div></div>
+          <div class="field"><label for="upload">Or upload a CSV</label><input id="upload" type="file" accept=".csv,text/csv,text/plain"><div class="hint">Same format as the box above: task, version, attempt, success.</div></div>
         </div>
       </form>
       <div>
@@ -121,7 +137,7 @@
       </div>
     </div>
     <section class="panel" style="margin-top:16px">
-      <h2>The same results, analyzed two ways</h2>
+      <h2>The same results, analyzed two ways <button type="button" data-tip="twoways"></button></h2>
       <div class="svgchart" id="checkChart"></div>
       <p class="chart-caption" id="checkCaption"></p>
     </section>
@@ -135,10 +151,7 @@
   </section>
 
   <footer class="kit-footer">
-    <p class="kit-siblings"><span class="kit-siblings-label">More tools:</span>
-      <a href="https://omidgolchin.github.io/bayesian-ab-lab/">A/B Test Decision Tool</a> ·
-      <a href="https://omidgolchin.github.io/queue-simulator/">Call Center Staffing Planner</a> ·
-      <a href="https://omidgolchin.github.io/experiment-hazard-simulator/" aria-current="page">Agent Eval Planner</a></p>
+    <p class="kit-siblings"></p>
     <p>Built by Omid Golchin · <a href="https://github.com/omidgolchin/experiment-hazard-simulator">Code, tests and design decisions</a> · Everything runs in your browser; nothing you type is sent anywhere unless you use the AI check with your own key.</p>
   </footer>
 </main>

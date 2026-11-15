@@ -47,10 +47,10 @@
   function buildChecklist() {
     $("qlist").innerHTML = HAZ.map(function (h) {
       var ctl = "";
-      if (h.numeric) ctl = '<input id="h_' + h.key + '" type="number" min="1" max="20" step="1" style="width:5em">';
+      if (h.numeric) ctl = '<input id="h_' + h.key + '" type="number" min="1" max="20" step="1" style="width:5em" aria-label="' + h.name + '">';
       else ctl = '<select id="h_' + h.key + '" aria-label="' + h.name + '"><option value="0">' + (h.yesLabel || "Yes") + '</option><option value="1">No</option></select>';
       var slider = h.param ? '<div class="ctl" id="row_' + h.key + '" hidden><label for="v_' + h.key + '">' + h.param.label + '</label><input type="range" id="v_' + h.key + '" min="' + h.param.min + '" max="' + h.param.max + '" step="' + h.param.step + '"><output id="o_' + h.key + '"></output></div>' : "";
-      return '<div class="q" id="q_' + h.key + '"><div class="q-row"><span class="q-text">' + h.q + "</span>" + ctl + "</div>" + slider + "</div>";
+      return '<div class="q" id="q_' + h.key + '"><div class="q-row"><label class="q-text" for="h_' + h.key + '">' + h.q + ' <button type="button" data-tip="hz_' + h.key + '"></button></label>' + ctl + "</div>" + slider + "</div>";
     }).join("");
   }
   buildChecklist();
@@ -85,7 +85,7 @@
     $("tab-plan").classList.toggle("active", m === "plan"); $("tab-plan").setAttribute("aria-selected", m === "plan");
     $("tab-check").classList.toggle("active", m === "check"); $("tab-check").setAttribute("aria-selected", m === "check");
     $("view-plan").hidden = m !== "plan"; $("view-check").hidden = m !== "check";
-    if (m === "plan") runPlan(); else runCheck();
+    if (m === "plan") runPlan(); else { if (!$("csv").value.trim()) { $("loadExample").click(); return; } runCheck(); }
   }
   $("tab-plan").addEventListener("click", function () { setMode("plan"); });
   $("tab-check").addEventListener("click", function () { setMode("check"); });
@@ -184,7 +184,7 @@
     else body = powerSent + " Fake wins stay near " + pct(P.fake) + (P.fake <= 0.065 ? ", as they should." : ".") + (flagged.length ? " Your answers still cost something: see the flagged items." : "");
     $("vTitle").textContent = title; $("vBody").textContent = body; $("verdict").className = "panel verdict v-" + cls;
     P.title = title; P.body = body;
-    $("kpis").innerHTML = [[pct(P.power), "chance to detect +" + v.gain + " pts"], [pct(P.fake), "fake wins (aim: ~5%)"], [F.int(P.n80), "tasks for 80%"], [F.int(v.tasks * v.attempts * 2), "runs in total"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + "</span></div>"; }).join("");
+    $("kpis").innerHTML = [[pct(P.power), "chance to detect +" + v.gain + " pts", "power"], [pct(P.fake), "fake wins (aim: ~5%)", "fake"], [F.int(P.n80), "tasks for 80%"], [F.int(v.tasks * v.attempts * 2), "runs in total"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + (x[2] ? ' <button type="button" data-tip="' + x[2] + '"></button>' : "") + "</span></div>"; }).join("");
     var c = [];
     P.impacts.forEach(function (x) {
       if (x.fake > 0.075) c.push(["fail", "FIX", x.h.name, "Alone, this takes fake wins to " + pct(x.fake) + ". " + x.h.fix]);
@@ -306,7 +306,7 @@
     title = title.charAt(0).toUpperCase() + title.slice(1);
     $("cTitle").textContent = title; $("cBody").textContent = body; $("cVerdict").className = "panel verdict v-" + cls;
     r.title = title; r.body = body;
-    $("cKpis").innerHTML = [[pts(r.diff), "points, " + r.vB + " − " + r.vA], [Math.round(100 * r.rateB) + "%", r.vB + " success (" + r.vA + " " + Math.round(100 * r.rateA) + "%)"], [r.paired, "tasks on both versions"], [r.p < 0.001 ? "< 0.001" : r.p.toFixed(3), "p-value (paired t)"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + "</span></div>"; }).join("");
+    $("cKpis").innerHTML = [[pts(r.diff), "points, " + r.vB + " − " + r.vA], [Math.round(100 * r.rateB) + "%", r.vB + " success (" + r.vA + " " + Math.round(100 * r.rateA) + "%)"], [r.paired, "tasks on both versions", "paired"], [r.p < 0.001 ? "< 0.001" : r.p.toFixed(3), "p-value (paired t)", "pvalue"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + (x[2] ? ' <button type="button" data-tip="' + x[2] + '"></button>' : "") + "</span></div>"; }).join("");
     var c = [];
     c.push(r.paired < 20 ? ["warn", "FEW", "Number of tasks", r.paired + " tasks: intervals are wide and the t-approximation is rough. Aim for many more tasks before drawing conclusions."] : ["ok", "OK", "Number of tasks", r.paired + " tasks ran on both versions."]);
     c.push(r.attemptsA !== r.attemptsB ? ["fail", "UNEQUAL", "Compute parity", r.vA + " has " + r.attemptsA + " attempts and " + r.vB + " has " + r.attemptsB + ". If one version got more tries, part of its gain is just more compute."] : ["ok", "OK", "Compute parity", "Both versions have " + r.attemptsA + " attempts in total."]);
@@ -347,6 +347,24 @@
     if (!lastCheck) return; var r = lastCheck;
     Tool.copy(["Eval result: " + r.title, r.body, "", "Checks: " + r.checks.map(function (x) { return x[2].toLowerCase() + " " + x[1].toLowerCase(); }).join(", "), "", "Analyzed with the Agent Eval Planner: " + location.origin + location.pathname].join("\n"), $("cToast"), "Summary copied.");
   });
+
+  var WHY = {"compute": "If B gets three tries and keeps the best, it wins more often even when it is no better. Best-of-k inflates success; the simulation shows by how much.", "failures": "When B crashes on hard tasks and those runs are dropped, B is scored only on easier tasks. Its success rate rises for the wrong reason.", "parse": "If unparseable outputs count as failures for one version but are retried or skipped for the other, the rule, not the agent, creates the difference.", "unit": "Attempts on the same task are not independent: a hard task fails every time. Treating 3 attempts × 60 tasks as 180 independent results makes the test far too confident.", "judge": "An LLM judge that can see which version wrote an answer may favor one, for example its own model family. Blind it and check it against human labels.", "drift": "Hosted models change under the same name. If A ran last week and B today, a silent model update can look like your improvement.", "cue": "If B's prompt also says \\\"think carefully\\\" or hints at the answer, you are testing the hint, not your change.", "metrics": "Look at ten metrics and report the best, and one will usually look significant by chance. Name the primary metric before you run."};
+
+  var GL = {
+    tasks: { t: "Tasks", d: "The separate problems in the eval set. Precision is limited mostly by how many tasks you have, because tasks differ in difficulty and each task is one independent piece of evidence." },
+    attempts: { t: "Attempts per task", d: "Agents are random: the same task can pass once and fail the next time. Repeating attempts averages out that luck, but it cannot make up for too few tasks." },
+    gain: { t: "Improvement to detect", d: "The smallest real gain, in percentage points, that you need the eval to catch. Halving it needs roughly four times the tasks." },
+    spread: { t: "Task difficulty spread", d: "How much tasks differ in difficulty. The simulation draws each task's difficulty from a normal distribution on the log-odds scale; this sets its spread (0.5, 1 or 2)." },
+    paired: { t: "Paired design", d: "Running both versions on the same tasks lets you compare them task by task. The task's difficulty affects both versions and cancels out, which can cut the tasks needed by half or more." },
+    baseline: { t: "Baseline", d: "The version you compare against, usually the current production prompt or model." },
+    checklist: { t: "Design checklist", d: "Eight common ways agent evals produce fake wins. Answer for your setup: each risky answer is added to the simulation, and the verdict reports the false-alarm rate it causes." },
+    power: { t: "Chance to detect (power)", d: "If the improvement is real, how often an eval like yours would show it as significant. 80% is the usual target. The dashed line is a formula; the dots are simulated evals with a 95% interval, so you can see they agree." },
+    fake: { t: "Fake wins", d: "How often the eval declares B better when B is exactly as good as A. A clean design keeps this near your significance level, 5%. Design flaws push it up." },
+    pvalue: { t: "p-value (paired t-test)", d: "If the two versions were truly equal, how often would chance alone give a per-task difference this large? Computed on per-task success rates, paired by task, so each task counts once." },
+    twoways: { t: "Two analyses of the same runs", d: "Left: the correct analysis, per task and paired. Right: the common mistake of pooling all attempts as if independent. The pooled interval is narrower, which is exactly why it misleads." }
+  };
+  HAZ.forEach(function (h) { GL["hz_" + h.key] = { t: h.name, d: WHY[h.key] }; });
+  Tool.explain(GL);
 
   setMode(state.mode === "check" ? "check" : "plan");
 })();
