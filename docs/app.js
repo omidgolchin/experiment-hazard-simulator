@@ -32,7 +32,7 @@
       fix: "Name one primary metric before running, and report every metric you looked at." }
   ];
   var DEFAULTS = { mode: "plan", tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", paired: "1", gainCheck: 5 };
-  HAZ.forEach(function (h) { DEFAULTS["h_" + h.key] = h.numeric ? 1 : 0; if (h.param) DEFAULTS["v_" + h.key] = h.param.def; });
+  HAZ.forEach(function (h) { DEFAULTS["h_" + h.key] = h.numeric ? 1 : ""; if (h.param) DEFAULTS["v_" + h.key] = h.param.def; });
   var EXAMPLES = [
     { label: "Small agent benchmark (60 tasks)", v: { tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", paired: "1" }, h: {} },
     { label: "Judged chat eval with retries for the new version", v: { tasks: 120, attempts: 3, rate: 41, gain: 5, spread: "1", paired: "1" }, h: { compute: 1, judge: 1, failures: 1 } },
@@ -48,7 +48,7 @@
     $("qlist").innerHTML = HAZ.map(function (h) {
       var ctl = "";
       if (h.numeric) ctl = '<input id="h_' + h.key + '" type="number" min="1" max="20" step="1" style="width:5em" aria-label="' + h.name + '">';
-      else ctl = '<select id="h_' + h.key + '" aria-label="' + h.name + '"><option value="0">' + (h.yesLabel || "Yes") + '</option><option value="1">No</option></select>';
+      else ctl = '<select id="h_' + h.key + '" aria-label="' + h.name + '"><option value="">Not checked yet</option><option value="0">' + (h.yesLabel || "Yes") + '</option><option value="1">No</option></select>';
       var slider = h.param ? '<div class="ctl" id="row_' + h.key + '" hidden><label for="v_' + h.key + '">' + h.param.label + '</label><input type="range" id="v_' + h.key + '" min="' + h.param.min + '" max="' + h.param.max + '" step="' + h.param.step + '"><output id="o_' + h.key + '"></output></div>' : "";
       return '<div class="q" id="q_' + h.key + '"><div class="q-row"><label class="q-text" for="h_' + h.key + '">' + h.q + ' <button type="button" data-tip="hz_' + h.key + '"></button></label>' + ctl + "</div>" + slider + "</div>";
     }).join("");
@@ -60,10 +60,20 @@
     HAZ.forEach(function (h) {
       var unsafe = h.numeric ? Number($("h_" + h.key).value) > 1 : $("h_" + h.key).value === "1";
       $("q_" + h.key).classList.toggle("unsafe", unsafe);
-      if (h.param) { $("row_" + h.key).hidden = !unsafe; $("o_" + h.key).textContent = h.param.show(Number($("v_" + h.key).value)); }
+      $("q_" + h.key).classList.toggle("unchecked", !h.numeric && $("h_" + h.key).value === "");
+      if (h.param) {
+        $("row_" + h.key).hidden = !unsafe;
+        var pv = Number($("v_" + h.key).value), txt = h.param.show(pv);
+        if (/log-odds/.test(h.param.label)) {
+          var r0 = Math.min(0.99, Math.max(0.01, Number($("rate").value) / 100 || 0.5)), l0 = Math.log(r0 / (1 - r0)), r1 = 1 / (1 + Math.exp(-(l0 + pv)));
+          txt += " (about +" + Math.round(100 * (r1 - r0)) + " points at your " + Math.round(100 * r0) + "% rate)";
+        }
+        $("o_" + h.key).textContent = txt;
+      }
     });
   }
   syncChecklist();
+  $("rate").addEventListener("input", syncChecklist);
   EXAMPLES.forEach(function (ex, i) { var o = document.createElement("option"); o.value = i; o.textContent = ex.label; $("example").appendChild(o); });
   $("example").addEventListener("change", function () {
     if (this.value === "") return;
@@ -128,7 +138,7 @@
     need("attempts", v.attempts >= 1 && v.attempts <= 20 && Number.isInteger(v.attempts), "Whole number, 1 to 20.");
     need("rate", v.rate > 0 && v.rate < 100, "Between 1 and 99.");
     need("gain", v.gain > 0 && v.rate + v.gain < 100, "Above 0, and rate + gain under 100.");
-    v.haz = {}; v.unsafe = [];
+    v.haz = {}; v.unsafe = []; v.unchecked = HAZ.filter(function (h) { return !h.numeric && $("h_" + h.key).value === ""; });
     HAZ.forEach(function (h) {
       var raw = $("h_" + h.key).value, unsafe = h.numeric ? Number(raw) > 1 : raw === "1";
       if (unsafe) v.unsafe.push(h);
@@ -179,9 +189,11 @@
     if (biased && weak) { title = "Fix the design, then add tasks"; cls = "bad"; }
     else if (biased) { title = "Fix the design first"; cls = "bad"; }
     else if (weak) { title = "Too few tasks: use about " + F.int(P.n80); cls = "warn"; }
+    else if (v.unchecked.length) { title = "Answer the checklist before you run"; cls = "warn"; }
     else { title = "Ready to run"; cls = "good"; }
     if (biased) body = "If B were no better than A, this design would still show a significant difference " + pct(P.fake) + " of the time, instead of about 5%. " + (flagged.length ? "Fix " + (flagged.length === 1 ? "the flagged item" : "the " + flagged.length + " flagged items") + " below. " : "") + powerSent;
     else body = powerSent + " Fake wins stay near " + pct(P.fake) + (P.fake <= 0.065 ? ", as they should." : ".") + (flagged.length ? " Your answers still cost something: see the flagged items." : "");
+    if (v.unchecked.length) body += " " + v.unchecked.length + " of " + HAZ.filter(function (h) { return !h.numeric; }).length + " design questions are still \"Not checked yet\"; the numbers assume each one is fine.";
     $("vTitle").textContent = title; $("vBody").textContent = body; $("verdict").className = "panel verdict v-" + cls;
     P.title = title; P.body = body;
     $("kpis").innerHTML = [[pct(P.power), "chance to detect +" + v.gain + " pts", "power"], [pct(P.fake), "fake wins (aim: ~5%)", "fake"], [F.int(P.n80), "tasks for 80%"], [F.int(v.tasks * v.attempts * 2), "runs in total"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + (x[2] ? ' <button type="button" data-tip="' + x[2] + '"></button>' : "") + "</span></div>"; }).join("");
@@ -191,7 +203,8 @@
       else if (x.power < P.power - 0.05) c.push(["warn", "COSTLY", x.h.name, "No extra fake wins here, but the chance to detect falls from " + pct(P.power) + " to " + pct(x.power) + ". " + x.h.fix]);
       else c.push(["info", "MINOR", x.h.name, "Little effect at these settings (fake wins " + pct(x.fake) + "). Still worth fixing: " + x.h.fix.charAt(0).toLowerCase() + x.h.fix.slice(1)]);
     });
-    if (!P.impacts.length) c.push(["ok", "OK", "Design checklist", "No risky answers: the simulated false-alarm rate is " + pct(P.fake) + "."]);
+    if (v.unchecked.length) c.push(["warn", "UNANSWERED", "Design checklist", "Not checked yet: " + v.unchecked.map(function (h) { return h.name.toLowerCase(); }).join(", ") + ". The simulation treats these as safe, so a fake win from any of them is not counted. Answer them to make the verdict yours."]);
+    if (!P.impacts.length && !v.unchecked.length) c.push(["ok", "OK", "Design checklist", "No risky answers: the simulated false-alarm rate is " + pct(P.fake) + "."]);
     c.push([v.paired ? "ok" : "warn", v.paired ? "PAIRED" : "UNPAIRED", "Same tasks for both", v.paired ? "Tasks, paired: each task's difference between versions is one data point, which cancels task difficulty." : "Separate task sets: task difficulty adds noise to the comparison. Running both versions on the same tasks would need fewer tasks."]);
     var runs1 = P.n80 * v.attempts, runs2 = P.n80x2 * v.attempts * 2;
     c.push(runs2 > runs1 * 1.15
@@ -255,17 +268,17 @@
       idx.attempt = find(["attempt", "run", "seed", "trial", "repeat"]); idx.success = find(["success", "pass", "passed", "correct", "solved", "score", "result", "outcome"]);
       if (idx.success < 0) idx.success = first.length - 1;
     }
-    var rows = [], bad = 0;
+    var rows = [], bad = 0, graded = 0;
     for (var i = start; i < lines.length; i++) {
       var c = split(lines[i]); if (c.length < 3) { bad++; continue; }
       var sraw = String(c[idx.success] || "").toLowerCase(), s;
       if (/^(1|true|yes|pass|passed|correct|success|solved)$/.test(sraw)) s = 1;
       else if (/^(0|false|no|fail|failed|incorrect|error|wrong)$/.test(sraw)) s = 0;
-      else if (isFinite(Number(sraw)) && sraw !== "") s = Number(sraw) >= 0.5 ? 1 : 0;
+      else if (isFinite(Number(sraw)) && sraw !== "") { s = Number(sraw) >= 0.5 ? 1 : 0; graded++; }
       else { bad++; continue; }
       rows.push({ task: c[idx.task], version: c[idx.version], attempt: idx.attempt >= 0 ? c[idx.attempt] : "", success: s });
     }
-    return { rows: rows, bad: bad };
+    return { rows: rows, bad: bad, graded: graded };
   }
   var runCheckSoon = debounce(runCheck, 300);
   $("csv").addEventListener("input", runCheckSoon);
@@ -314,6 +327,7 @@
     var tw = r.hi - r.lo, bw = r.bootHi - r.bootLo;
     c.push(Math.abs(tw - bw) > 0.25 * tw ? ["warn", "CHECK", "Interval methods", "The bootstrap interval (" + pts(r.bootLo) + " to " + pts(r.bootHi) + ") differs from the t-interval: the per-task differences are far from normal. Trust the bootstrap."] : ["ok", "AGREE", "Interval methods", "The task bootstrap (" + pts(r.bootLo) + " to " + pts(r.bootHi) + ") agrees with the t-interval."]);
     if (r.bad) c.push(["warn", "SKIPPED", "Unreadable rows", r.bad + " row" + (r.bad === 1 ? "" : "s") + " could not be read and were skipped."]);
+    if (parsed.graded) c.unshift(["warn", "CUT AT 0.5", "Graded scores", parsed.graded + " results were scores between 0 and 1 rather than pass/fail. They were cut at 0.5 (0.7 counts as a success, 0.4 as a failure), so the detail in graded scores is lost. This tool analyzes pass/fail results."]);
     $("cChecks").innerHTML = c.map(function (x) { return '<div class="check is-' + x[0] + '"><span class="badge">' + x[1] + '</span><div><span class="c-name">' + x[2] + '.</span> <span class="c-text">' + x[3] + "</span></div></div>"; }).join("");
     r.checks = c;
     drawCheck();
@@ -354,7 +368,7 @@
     tasks: { t: "Tasks", d: "The separate problems in the eval set. Precision is limited mostly by how many tasks you have, because tasks differ in difficulty and each task is one independent piece of evidence." },
     attempts: { t: "Attempts per task", d: "Agents are random: the same task can pass once and fail the next time. Repeating attempts averages out that luck, but it cannot make up for too few tasks." },
     gain: { t: "Improvement to detect", d: "The smallest real gain, in percentage points, that you need the eval to catch. Halving it needs roughly four times the tasks." },
-    spread: { t: "Task difficulty spread", d: "How much tasks differ in difficulty. The simulation draws each task's difficulty from a normal distribution on the log-odds scale; this sets its spread (0.5, 1 or 2)." },
+    spread: { t: "Task difficulty spread", d: "How much tasks differ in difficulty. The simulation draws each task's difficulty from a normal distribution on the log-odds scale with spread 0.5, 1 or 2. At a 50% overall rate, the middle 80% of tasks pass roughly 35–65% of the time (similar), 22–78% (mixed) or 7–93% (very mixed). A pilot that runs each task a few times shows which you have." },
     paired: { t: "Paired design", d: "Running both versions on the same tasks lets you compare them task by task. The task's difficulty affects both versions and cancels out, which can cut the tasks needed by half or more." },
     baseline: { t: "Baseline", d: "The version you compare against, usually the current production prompt or model." },
     checklist: { t: "Design checklist", d: "Eight common ways agent evals produce fake wins. Answer for your setup: each risky answer is added to the simulation, and the verdict reports the false-alarm rate it causes." },
