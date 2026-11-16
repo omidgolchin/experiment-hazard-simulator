@@ -48,7 +48,7 @@
       <p class="also"><b>Also here:</b> <i>Check my results</i> analyzes runs you already have · <i>Check my methods section</i> answers the checklist from a pasted write-up · <i>Copy design report</i> gives a summary for a paper or a review.</p>
     </div>
     <div class="work">
-      <form class="panel" novalidate onsubmit="return false">
+      <form class="panel" id="f-plan" novalidate onsubmit="return false">
         <div class="panel-head"><h2>Your eval</h2>
           <select class="example" id="example" aria-label="Load an example"><option value="">Load example…</option></select></div>
         <div class="fields">
@@ -93,7 +93,7 @@
       <div class="more-body small">
         <p><b>Model.</b> Each task has a difficulty (normal on the log-odds scale; "similar", "mixed" and "very mixed" are standard deviations of 0.5, 1 and 2), and each attempt adds noise (0.5). Version B's improvement is set so that the average success rate rises by the points you entered. Your current success rate sets the baseline.</p>
         <p><b>Analysis.</b> With the same tasks for both versions: a paired t-test on per-task differences in success rate, because the task, not the attempt, is the unit that varies. With separate task sets: a Welch t-test on per-task success rates.</p>
-        <p><b>Chance to detect</b> is the share of 2,000 simulated evals of the clean design (no risky answers) that find B significantly better at the 5% level. <b>Fake wins</b> is the share of simulated evals with no real difference that find a significant one, with your checklist answers applied; a sound design sits near 5%. <b>Tasks for 80%</b> comes from the standard formula n = ((z<sub>0.975</sub> + z<sub>0.8</sub>) · sd / gain)², with sd the simulated spread of per-task differences, and the chart confirms it by simulation.</p>
+        <p><b>Chance to detect</b> is the share of 1,500 simulated evals of the clean design (no risky answers) that find B significantly better at the 5% level. <b>Fake wins</b> is the share of simulated evals with no real difference that find a significant one, with your checklist answers applied; a sound design sits near 5%. <b>Tasks for 80%</b> comes from the standard formula n = ((z<sub>0.975</sub> + z<sub>0.8</sub>) · sd / gain)², with sd the simulated spread of per-task differences, and the chart confirms it by simulation.</p>
         <div class="formula" id="designEffect"></div>
         <p>The checklist is the hazard list of the <a href="https://github.com/omidgolchin/agent-experiment-methodology">agent-experiment-methodology</a> skill (<a href="https://github.com/omidgolchin/agent-experiment-methodology/blob/main/references/agent-hazards.md">agent-hazards.md</a>), each with the check that catches it. Background: Hurlbert (1984) on pseudo-replication; Simmons, Nelson &amp; Simonsohn (2011) on selective reporting; Panickssery, Bowman &amp; Feng (2024) on LLM judges favoring their own outputs.</p>
         <p class="footnote">The simulation studies behind this tool (how each hazard's false-alarm rate grows with its strength) are in <a href="https://github.com/omidgolchin/experiment-hazard-simulator#research-notes">Research notes</a>. All data on this page are simulated.</p>
@@ -112,7 +112,7 @@
       <p class="also"><b>Also here:</b> <i>Load example results</i> shows the expected format.</p>
     </div>
     <div class="work">
-      <form class="panel" novalidate onsubmit="return false">
+      <form class="panel" id="f-check" novalidate onsubmit="return false">
         <div class="panel-head"><h2>Your results</h2>
           <button type="button" id="loadExample">Load example results</button></div>
         <div class="field"><label for="csv">One row per attempt: task, version, attempt, success (1 or 0)</label>

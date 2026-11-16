@@ -80,8 +80,12 @@
     var ex = EXAMPLES[+this.value]; setInputs(ex.v);
     HAZ.forEach(function (h) { $("h_" + h.key).value = h.numeric ? (ex.h[h.key] || 1) : (ex.h[h.key] ? "1" : "0"); if (h.param) $("v_" + h.key).value = h.param.def; });
     this.value = ""; document.querySelectorAll(".field.filled").forEach(function (f) { f.classList.remove("filled"); });
+    Tool.exampleWatch($("f-plan"), "<b>" + ex.label + "</b>. Its checklist answers belong to the example: set each one for your own eval.");
     syncChecklist(); runPlan();
   });
+  var q0 = new URLSearchParams(location.search);
+  if (!["tasks", "attempts", "rate", "gain", "spread", "paired"].some(function (k) { return q0.has(k); }))
+    Tool.exampleWatch($("f-plan"), "<b>A small agent benchmark:</b> 60 tasks, 3 attempts each, 50% success today, hoping for +10 points. Type your own design over it, then answer the checklist.");
   function debounce(fn, ms) { var t; return function () { clearTimeout(t); t = setTimeout(fn, ms); }; }
   var runPlanSoon = debounce(runPlan, 250);
   ["tasks", "attempts", "rate", "gain", "spread", "paired"].forEach(function (id) { $(id).addEventListener("input", runPlanSoon); $(id).addEventListener("change", runPlanSoon); });
@@ -134,10 +138,10 @@
     var v = { tasks: num("tasks"), attempts: num("attempts"), rate: num("rate"), gain: num("gain"), spread: Number($("spread").value), paired: $("paired").value === "1" };
     var ok = true;
     function need(id, cond, msg) { fieldError(id, cond ? "" : msg); if (!cond) ok = false; }
-    need("tasks", v.tasks >= 5 && v.tasks <= 2000 && Number.isInteger(v.tasks), "Whole number, 5 to 2,000.");
-    need("attempts", v.attempts >= 1 && v.attempts <= 20 && Number.isInteger(v.attempts), "Whole number, 1 to 20.");
-    need("rate", v.rate > 0 && v.rate < 100, "Between 1 and 99.");
-    need("gain", v.gain > 0 && v.rate + v.gain < 100, "Above 0, and rate + gain under 100.");
+    need("tasks", v.tasks >= 5 && v.tasks <= 2000 && Number.isInteger(v.tasks), "Enter the number of tasks as a whole number from 5 to 2,000.");
+    need("attempts", v.attempts >= 1 && v.attempts <= 20 && Number.isInteger(v.attempts), "Enter the attempts per task as a whole number from 1 to 20.");
+    need("rate", v.rate > 0 && v.rate < 100, "Enter A's success rate as a percentage from 1 to 99, such as 60.");
+    need("gain", v.gain > 0 && v.rate + v.gain < 100, "Enter the gain in points, above 0, small enough that A's rate plus the gain stays under 100.");
     v.haz = {}; v.unsafe = []; v.unchecked = HAZ.filter(function (h) { return !h.numeric && $("h_" + h.key).value === ""; });
     HAZ.forEach(function (h) {
       var raw = $("h_" + h.key).value, unsafe = h.numeric ? Number(raw) > 1 : raw === "1";
@@ -294,7 +298,9 @@
       var diff = rng.normal() * sig, id = "t" + t;
       ["baseline", "new"].forEach(function (ver) { for (var a = 1; a <= 3; a++) { var lg = base + diff + rng.normal() * NOISE + (ver === "new" ? d : 0); lines.push(id + "," + ver + "," + a + "," + (rng.next() < 1 / (1 + Math.exp(-lg)) ? 1 : 0)); } });
     }
-    $("csv").value = lines.join("\n"); runCheck();
+    $("csv").value = lines.join("\n");
+    Tool.exampleWatch($("f-check"), "<b>Simulated results:</b> 50 tasks, 3 attempts each, where the new version is truly 8 points better. Paste or upload your own over it.");
+    runCheck();
   });
   function runCheck() {
     var parsed = parseCsv($("csv").value);
