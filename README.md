@@ -64,12 +64,9 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
   wordings come from the spec's summary of the skill. They may need
   updating to match it word for word.
 
-## Research notes
+## The study behind it
 
-The simulation studies behind the tool, kept out of it on purpose. Full numbers in [results/summary.md](results/summary.md). All data are simulated.
-
-- **Each hazard alone, at a realistic strength** (20 tasks, 5 attempts, no real effect): best-of-3 for the new version gave fake wins in 91% of evals; an unblinded judge upgrading 20% of failures, 20%; selective reporting of the best of 5 metrics, 22%; dropping crashed hard tasks, about 5% (it costs power, not validity). ![False-positive rate against hazard strength](results/figures/fpr_sweeps.png)
-- **Small agent studies miss real effects too.** At 20 tasks the clean design detected a modest real effect only 10% of the time.
+This tool was built from a study, which lives in its own repository: [How design hazards fake wins in LLM-agent experiments](https://github.com/omidgolchin/agent-eval-hazards-study). A simulation study of eight design hazards: best-of-3 for one arm alone gave fake wins in 91% of evals with no real effect. The study repository holds its question, frozen plan, results and limitations; the copies of its scripts and outputs kept here are what this tool's tests check against.
 
 ## Run it
 
