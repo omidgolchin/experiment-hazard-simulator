@@ -2,19 +2,19 @@
 
 For anyone comparing two AI agents, prompts or models on a set of tasks: before you run the eval, see how likely it is to detect the improvement you care about, how likely it is to show a fake one, how many tasks you need, and which design choices to fix. After you run it, paste the results and get the honest interval.
 
-![The planner on three eval designs (a small benchmark; retries for the new version and an unblinded judge, where fake wins jump; separate task sets with pooled attempts), the explanation behind one checklist item, and the results checker](docs/hero.gif)
+![The planner as a one-question-at-a-time wizard: the first card (how big is the eval?), a checklist card with its hazard slider open, and the verdict with its ranked list of fixes](docs/hero.gif)
 
-![The planner on a desktop: the three-step guide, the inputs with a hint under each, and the verdict](docs/screenshots/desktop.png)
+![The planner on a desktop: the Before you run / After you run switch, and the first wizard card — one question, a hint under each input, and a line saying why it matters](docs/screenshots/desktop.png)
 
 **Use it:** https://omidgolchin.github.io/experiment-hazard-simulator/ (runs in your browser; nothing you type leaves it)
 
 ## What it does
 
-- **Plan my eval.** Tasks, attempts per task, current success rate and the improvement you hope to detect give the chance to detect it, the tasks needed for 80%, and the fake-win rate of your design. An eight-question checklist covers the ways agent evals go wrong; each risky answer is simulated, so the verdict says what it costs.
-- **Check my results.** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version.
-- **Check my methods section.** Paste the write-up of an eval (yours or a paper's). A language model (your key, or copy the prompt into any assistant) answers the checklist from it, quoting the sentence behind each answer, and lists what the write-up never states. The simulation then scores the design.
+- **Plan my eval (Before you run).** One question per card: tasks, attempts per task, current success rate and the improvement you hope to detect give the chance to detect it, the tasks needed for 80%, and the fake-win rate of your design. An eight-question checklist covers the ways agent evals go wrong; each risky answer is simulated, and the verdict ends with a ranked list of what to fix first. A "Jump to the verdict" link under every card takes you straight to the verdict with the answers you have given so far.
+- **Check my results (After you run).** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version.
+- **Check my methods section (After you run).** Paste the write-up of an eval (yours or a paper's). A language model (your key, or copy the prompt into any assistant) answers the checklist from it, quoting the sentence behind each answer, and lists what the write-up never states. The simulation then scores the design.
 - **Copy design report.** A Markdown checklist with the numbers, ready for a paper appendix or a pull request.
-- **Help where you need it.** Each mode opens with three steps saying what to enter and what you get; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
+- **Help where you need it.** Each view opens with one line saying what to enter and what you get; every wizard card adds a line saying why the question matters; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
 
 ## Built-in checks
 
@@ -42,7 +42,7 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
 
 ## Validation
 
-- **30 tests** (`pytest`): false alarms of the clean design at 5%; the sample-size formula delivering 80%; each hazard raising false alarms; pooling attempts inflating false alarms only without pairing; the JavaScript engine against the NumPy reference (`sim/planner.py`) on false alarms, power and effect sizes; the results checker against `scipy.stats.ttest_1samp`; detection of unequal compute and unmatched tasks; the original hazard simulator's JS/Python agreement; the AI check's prompt and reply handling.
+- **33 tests** (`pytest`): false alarms of the clean design at 5%; the sample-size formula delivering 80%; each hazard raising false alarms; pooling attempts inflating false alarms only without pairing; the JavaScript engine against the NumPy reference (`sim/planner.py`) on false alarms, power and effect sizes; the results checker against `scipy.stats.ttest_1samp`; detection of unequal compute and unmatched tasks; the original hazard simulator's JS/Python agreement; the AI check's prompt and reply handling; the wizard's "Jump to the verdict" control, including a browser check that the verdict it lands on matches the full walk-through (`scripts/check_wizard_jump.js`).
 - **AI check extraction:** a 20-item test set of methods paragraphs (`assist/testset.json`), from careful to careless to silent. Score any model with `ANTHROPIC_API_KEY=... node scripts/eval_assist.js`. Not yet run for this release.
 - Checked on desktop and phone widths, in light and dark themes.
 

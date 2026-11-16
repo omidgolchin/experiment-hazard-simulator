@@ -43,14 +43,18 @@
   var state = Tool.readParams(DEFAULTS);
   var lastPlan = null, lastCheck = null, runId = 0;
 
-  /* ---------- checklist UI ---------- */
+  /* Why each checklist answer matters: the help line on every wizard card,
+   * and the text behind each question's "?" explanation. */
+  var WHY = {"compute": "If B gets three tries and keeps the best, it wins more often even when it is no better. Best-of-k inflates success; the simulation shows by how much.", "failures": "When B crashes on hard tasks and those runs are dropped, B is scored only on easier tasks. Its success rate rises for the wrong reason.", "parse": "If unparseable outputs count as failures for one version but are retried or skipped for the other, the rule, not the agent, creates the difference.", "unit": "Attempts on the same task are not independent: a hard task fails every time. Treating 3 attempts × 60 tasks as 180 independent results makes the test far too confident.", "judge": "An LLM judge that can see which version wrote an answer may favor one, for example its own model family. Blind it and check it against human labels.", "drift": "Hosted models change under the same name. If A ran last week and B today, a silent model update can look like your improvement.", "cue": "If B's prompt also says \"think carefully\" or hints at the answer, you are testing the hint, not your change.", "metrics": "Look at ten metrics and report the best, and one will usually look significant by chance. Name the primary metric before you run."};
+
+  /* ---------- checklist UI: one wizard card per question ---------- */
   function buildChecklist() {
     $("qlist").innerHTML = HAZ.map(function (h) {
       var ctl = "";
       if (h.numeric) ctl = '<input id="h_' + h.key + '" type="number" min="1" max="20" step="1" style="width:5em" aria-label="' + h.name + '">';
       else ctl = '<select id="h_' + h.key + '" aria-label="' + h.name + '"><option value="">Not checked yet</option><option value="0">' + (h.yesLabel || "Yes") + '</option><option value="1">No</option></select>';
       var slider = h.param ? '<div class="ctl" id="row_' + h.key + '" hidden><label for="v_' + h.key + '">' + h.param.label + '</label><input type="range" id="v_' + h.key + '" min="' + h.param.min + '" max="' + h.param.max + '" step="' + h.param.step + '"><output id="o_' + h.key + '"></output></div>' : "";
-      return '<div class="q" id="q_' + h.key + '"><div class="q-row"><label class="q-text" for="h_' + h.key + '">' + h.q + ' <button type="button" data-tip="hz_' + h.key + '"></button></label>' + ctl + "</div>" + slider + "</div>";
+      return '<div class="q wiz-step" id="q_' + h.key + '" data-step-title="' + h.name + '" tabindex="-1" hidden><div class="q-row"><label class="q-text" for="h_' + h.key + '">' + h.q + ' <button type="button" data-tip="hz_' + h.key + '"></button></label>' + ctl + "</div>" + slider + '<p class="q-why"><b>Why this matters:</b> ' + WHY[h.key] + "</p></div>";
     }).join("");
   }
   buildChecklist();
@@ -81,7 +85,7 @@
     HAZ.forEach(function (h) { $("h_" + h.key).value = h.numeric ? (ex.h[h.key] || 1) : (ex.h[h.key] ? "1" : "0"); if (h.param) $("v_" + h.key).value = h.param.def; });
     this.value = ""; document.querySelectorAll(".field.filled").forEach(function (f) { f.classList.remove("filled"); });
     Tool.exampleWatch($("f-plan"), "<b>" + ex.label + "</b>. Its checklist answers belong to the example: set each one for your own eval.");
-    syncChecklist(); runPlan();
+    syncChecklist(); runPlan(); wizGo(wizSteps.length - 1, false);
   });
   var q0 = new URLSearchParams(location.search);
   if (!["tasks", "attempts", "rate", "gain", "spread", "paired"].some(function (k) { return q0.has(k); }))
@@ -96,11 +100,44 @@
   });
   function setMode(m) {
     state.mode = m;
-    $("tab-plan").classList.toggle("active", m === "plan"); $("tab-plan").setAttribute("aria-selected", m === "plan");
-    $("tab-check").classList.toggle("active", m === "check"); $("tab-check").setAttribute("aria-selected", m === "check");
+    $("tab-plan").classList.toggle("active", m === "plan"); $("tab-plan").setAttribute("aria-pressed", m === "plan");
+    $("tab-check").classList.toggle("active", m === "check"); $("tab-check").setAttribute("aria-pressed", m === "check");
     $("view-plan").hidden = m !== "plan"; $("view-check").hidden = m !== "check";
     if (m === "plan") runPlan(); else { if (!$("csv").value.trim()) { $("loadExample").click(); return; } runCheck(); }
   }
+
+  /* ---------- wizard: one card at a time, progress dots ---------- */
+  var wizSteps = Array.prototype.slice.call(document.querySelectorAll("#f-plan .wiz-step"));
+  var wizIdx = 0;
+  $("wizDots").innerHTML = wizSteps.map(function (s, i) {
+    return '<button type="button" class="wiz-dot" data-step="' + i + '" aria-label="Go to step ' + (i + 1) + " of " + wizSteps.length + ": " + s.getAttribute("data-step-title") + '"></button>';
+  }).join("");
+  Array.prototype.forEach.call($("wizDots").querySelectorAll(".wiz-dot"), function (d) {
+    d.addEventListener("click", function () { wizGo(+d.getAttribute("data-step"), true); });
+  });
+  function wizGo(i, focus) {
+    wizIdx = Math.max(0, Math.min(wizSteps.length - 1, i));
+    wizSteps.forEach(function (s, j) { s.hidden = j !== wizIdx; });
+    var onChecklist = wizSteps[wizIdx].classList.contains("q");
+    document.querySelectorAll(".wiz-part").forEach(function (e) { e.hidden = !onChecklist; });
+    Array.prototype.forEach.call($("wizDots").querySelectorAll(".wiz-dot"), function (d, j) {
+      d.classList.toggle("done", j < wizIdx);
+      if (j === wizIdx) d.setAttribute("aria-current", "step"); else d.removeAttribute("aria-current");
+    });
+    $("wizBack").disabled = wizIdx === 0;
+    $("wizJump").hidden = wizIdx === wizSteps.length - 1;
+    $("wizNext").hidden = wizIdx === wizSteps.length - 1;
+    $("wizNext").textContent = wizIdx === wizSteps.length - 2 ? "See the verdict →" : "Next →";
+    $("wizProgress").textContent = "Step " + (wizIdx + 1) + " of " + wizSteps.length + " · " + wizSteps[wizIdx].getAttribute("data-step-title");
+    if (focus) { var st = wizSteps[wizIdx]; var t = st.querySelector("h2[tabindex]") || (st.hasAttribute("tabindex") ? st : st.querySelector("h2")); if (t) t.focus(); }
+  }
+  $("wizBack").addEventListener("click", function () { wizGo(wizIdx - 1, true); });
+  $("wizNext").addEventListener("click", function () { wizGo(wizIdx + 1, true); });
+  /* Jump straight to the summary card with the inputs as they stand; the
+     verdict is computed live on every input change, so it is the same
+     verdict the full walk-through lands on. */
+  $("wizJump").addEventListener("click", function () { wizGo(wizSteps.length - 1, true); });
+  wizGo(0, false);
   $("tab-plan").addEventListener("click", function () { setMode("plan"); });
   $("tab-check").addEventListener("click", function () { setMode("check"); });
   window.addEventListener("resize", debounce(function () { if (state.mode === "plan" && lastPlan) drawPower(); if (state.mode === "check" && lastCheck) drawCheck(); }, 200));
@@ -129,7 +166,7 @@
       if (vals.judgeBlind) mark("h_judge", /unblind|not blind|sees/i.test(vals.judgeBlind) ? "1" : "0");
       yes("drift", vals.interleaved); yes("cue", vals.promptsMatch);
       if (vals.metricsExamined) mark("h_metrics", Math.max(1, Math.round(vals.metricsExamined)));
-      syncChecklist(); runPlan();
+      syncChecklist(); runPlan(); setMode("plan"); wizGo(wizSteps.length - 1, false);
     }
   }));
 
@@ -158,7 +195,7 @@
     var url = { mode: "plan" }; ["tasks", "attempts", "rate", "gain", "spread", "paired"].forEach(function (k) { url[k] = $(k).value; });
     HAZ.forEach(function (h) { url["h_" + h.key] = $("h_" + h.key).value; if (h.param) url["v_" + h.key] = $("v_" + h.key).value; });
     Tool.writeParams(url);
-    if (!v) { $("vTitle").textContent = "Check the highlighted inputs"; $("vBody").textContent = ""; $("kpis").innerHTML = ""; $("checks").innerHTML = ""; $("verdict").className = "panel verdict v-neutral"; return; }
+    if (!v) { $("vTitle").textContent = "Check the highlighted inputs"; $("vBody").textContent = ""; $("kpis").innerHTML = ""; $("checks").innerHTML = ""; $("fixList").innerHTML = ""; $("verdict").className = "panel verdict v-neutral"; return; }
     var my = ++runId;
     $("vTitle").textContent = "Simulating…";
     setTimeout(function () { if (my === runId) computePlan(v); }, 10);
@@ -201,14 +238,20 @@
     $("vTitle").textContent = title; $("vBody").textContent = body; $("verdict").className = "panel verdict v-" + cls;
     P.title = title; P.body = body;
     $("kpis").innerHTML = [[pct(P.power), "chance to detect +" + v.gain + " pts", "power"], [pct(P.fake), "fake wins (aim: ~5%)", "fake"], [F.int(P.n80), "tasks for 80%"], [F.int(v.tasks * v.attempts * 2), "runs in total"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + (x[2] ? ' <button type="button" data-tip="' + x[2] + '"></button>' : "") + "</span></div>"; }).join("");
-    var c = [];
-    P.impacts.forEach(function (x) {
-      if (x.fake > 0.075) c.push(["fail", "FIX", x.h.name, "Alone, this takes fake wins to " + pct(x.fake) + ". " + x.h.fix]);
-      else if (x.power < P.power - 0.05) c.push(["warn", "COSTLY", x.h.name, "No extra fake wins here, but the chance to detect falls from " + pct(P.power) + " to " + pct(x.power) + ". " + x.h.fix]);
-      else c.push(["info", "MINOR", x.h.name, "Little effect at these settings (fake wins " + pct(x.fake) + "). Still worth fixing: " + x.h.fix.charAt(0).toLowerCase() + x.h.fix.slice(1)]);
+    /* The verdict's fix list: every risky answer, ranked by what it does to
+     * the fake-win rate (power-costly ones next, minor ones last). */
+    var fixes = P.impacts.map(function (x) {
+      if (x.fake > 0.075) return { rank: 0, fake: x.fake, e: ["fail", "FIX", x.h.name, "Alone, this takes fake wins to " + pct(x.fake) + ". " + x.h.fix] };
+      if (x.power < P.power - 0.05) return { rank: 1, fake: x.fake, e: ["warn", "COSTLY", x.h.name, "Fake wins stay near " + pct(x.fake) + " on their own, but the chance to detect falls from " + pct(P.power) + " to " + pct(x.power) + ". " + x.h.fix] };
+      return { rank: 2, fake: x.fake, e: ["info", "MINOR", x.h.name, "Little effect at these settings (fake wins " + pct(x.fake) + "). Still worth fixing: " + x.h.fix.charAt(0).toLowerCase() + x.h.fix.slice(1)] };
     });
+    fixes.sort(function (a, b) { return a.rank - b.rank || b.fake - a.fake; });
+    $("fixList").innerHTML = fixes.length ? fixes.map(function (f, i) {
+      var x = f.e;
+      return '<div class="check is-' + x[0] + '"><span class="badge">' + x[1] + '</span><div><span class="c-name">' + (i + 1) + ". " + x[2] + '.</span> <span class="c-text">' + x[3] + "</span></div></div>";
+    }).join("") : '<div class="check is-ok"><span class="badge">OK</span><div><span class="c-name">Nothing to fix.</span> <span class="c-text">No risky checklist answers: the simulated false-alarm rate is ' + pct(P.fake) + ".</span></div></div>";
+    var c = [];
     if (v.unchecked.length) c.push(["warn", "UNANSWERED", "Design checklist", "Not checked yet: " + v.unchecked.map(function (h) { return h.name.toLowerCase(); }).join(", ") + ". The simulation treats these as safe, so a fake win from any of them is not counted. Answer them to make the verdict yours."]);
-    if (!P.impacts.length && !v.unchecked.length) c.push(["ok", "OK", "Design checklist", "No risky answers: the simulated false-alarm rate is " + pct(P.fake) + "."]);
     c.push([v.paired ? "ok" : "warn", v.paired ? "PAIRED" : "UNPAIRED", "Same tasks for both", v.paired ? "Tasks, paired: each task's difference between versions is one data point, which cancels task difficulty." : "Separate task sets: task difficulty adds noise to the comparison. Running both versions on the same tasks would need fewer tasks."]);
     var runs1 = P.n80 * v.attempts, runs2 = P.n80x2 * v.attempts * 2;
     c.push(runs2 > runs1 * 1.15
@@ -367,8 +410,6 @@
     if (!lastCheck) return; var r = lastCheck;
     Tool.copy(["Eval result: " + r.title, r.body, "", "Checks: " + r.checks.map(function (x) { return x[2].toLowerCase() + " " + x[1].toLowerCase(); }).join(", "), "", "Analyzed with the Agent Eval Planner: " + location.origin + location.pathname].join("\n"), $("cToast"), "Summary copied.");
   });
-
-  var WHY = {"compute": "If B gets three tries and keeps the best, it wins more often even when it is no better. Best-of-k inflates success; the simulation shows by how much.", "failures": "When B crashes on hard tasks and those runs are dropped, B is scored only on easier tasks. Its success rate rises for the wrong reason.", "parse": "If unparseable outputs count as failures for one version but are retried or skipped for the other, the rule, not the agent, creates the difference.", "unit": "Attempts on the same task are not independent: a hard task fails every time. Treating 3 attempts × 60 tasks as 180 independent results makes the test far too confident.", "judge": "An LLM judge that can see which version wrote an answer may favor one, for example its own model family. Blind it and check it against human labels.", "drift": "Hosted models change under the same name. If A ran last week and B today, a silent model update can look like your improvement.", "cue": "If B's prompt also says \\\"think carefully\\\" or hints at the answer, you are testing the hint, not your change.", "metrics": "Look at ten metrics and report the best, and one will usually look significant by chance. Name the primary metric before you run."};
 
   var GL = {
     tasks: { t: "Tasks", d: "The separate problems in the eval set. Precision is limited mostly by how many tasks you have, because tasks differ in difficulty and each task is one independent piece of evidence." },
