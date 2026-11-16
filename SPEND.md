@@ -8,3 +8,4 @@ Spend cap for this project: **$0** (simulation only).
 | Compute | local CPU only |
 | **Total** | **$0.00** |
 | Structural-variation restructure 2026-11-16 (Before/After switch + wizard layout) | $0.00 API spend |
+- 2026-11-16: guide sections (start here, situations, when to use, where it comes from) — $0.00 API spend; all work local.

@@ -14,6 +14,7 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
 - **Check my results (After you run).** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version.
 - **Check my methods section (After you run).** Paste the write-up of an eval (yours or a paper's). A language model (your key, or copy the prompt into any assistant) answers the checklist from it, quoting the sentence behind each answer, and lists what the write-up never states. The simulation then scores the design.
 - **Copy design report.** A Markdown checklist with the numbers, ready for a paper appendix or a pull request.
+- **Start here.** The page opens with the question it answers and three steps; a list of common situations fills the design; and a section says when to use the tool and when not.
 - **Help where you need it.** Each view opens with one line saying what to enter and what you get; every wizard card adds a line saying why the question matters; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
 
 ## Built-in checks
@@ -64,9 +65,48 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
   wordings come from the spec's summary of the skill. They may need
   updating to match it word for word.
 
-## The study behind it
+## Common situations
 
-This tool was built from a study, which lives in its own repository: [How design hazards fake wins in LLM-agent experiments](https://github.com/omidgolchin/agent-eval-hazards-study). A simulation study of eight design hazards: best-of-3 for one arm alone gave fake wins in 91% of evals with no real effect. The study repository holds its question, frozen plan, results and limitations; the copies of its scripts and outputs kept here are what this tool's tests check against.
+The form opens with "Start from a common situation". Each entry fills the form and says what it shows:
+
+| Situation | What it shows |
+|---|---|
+| Small agent benchmark (60 tasks) | A clean design; the only question is whether 60 tasks are enough. |
+| Judged chat eval with retries for the new version | Retries, an unblinded judge and dropped crashes together. |
+| Large coding benchmark (300 tasks) | Many tasks, one attempt each, a small gain. |
+| Separate task sets, attempts pooled | The setting where pooling fakes wins. |
+| Five metrics, report the best | Each extra metric is another chance at a fake win. |
+| New run against last month's baseline numbers | Model or API drift counts as an improvement. |
+| Prompt test where the prompts differ in more than one way | Wording that hints at the expected behavior wins on its own. |
+
+Settings are illustrative. To add a situation, append an entry to `EXAMPLES` and its note to `WHY_EX` in `docs/app.js`.
+
+## When to use it, and when not
+
+Use it before running an eval that compares two versions of an agent, prompt or model on a fixed set of tasks scored pass or fail, to size it and fix the design; and after it, to read the result per task rather than per attempt.
+
+| It assumes | If yours differs |
+|---|---|
+| Each attempt is scored pass or fail. | Graded scores (a 1-to-10 judge rating, partial credit) need a different model. As a first cut, set a pass threshold and use pass rates. |
+| Tasks differ in difficulty, and attempts on the same task succeed or fail together. | This is what makes the task the unit of analysis. If your tasks are near-identical, pooling attempts matters less. |
+| The improvement is the same size on every task. | Real improvements are larger on some tasks and zero on others. The chance to detect is then lower than shown; ask for a larger task count. |
+| Each hazard's strength is a setting you choose (the default is a realistic middle value). | The tool shows the mechanism and its scale, not how strong a hazard is in your eval. Move the slider to the strength you suspect. |
+| The comparison is between two versions. | For several versions, compare each with the baseline and correct for the number of comparisons, or plan a larger eval. |
+| Success rates are not near 0% or 100%. | Near the extremes, few tasks carry information. Make the task set harder or easier first. |
+
+Do not use it for open-ended human preference studies (use a paired-preference design with its own power analysis), for tracking a single model's score over time, or as proof that an eval is sound: a clean verdict means the hazards it checks are handled, not that the tasks measure what you care about.
+
+## Where it comes from, and how it was generalised
+
+The tool comes out of a study, ["How design hazards fake wins in LLM-agent experiments"](https://github.com/omidgolchin/agent-eval-hazards-study). It simulated two conditions with no real difference, added one design hazard at a time, and counted how often the study would still report a significant improvement. With no hazard the rate is 5%, as it should be. With one:
+
+- **Best-of-3 for the new version alone** gave fake wins in 91% of evals.
+- **Picking the best of five metrics** gave 22%, and an **unblinded judge** that flips 20% of the new version's failures gave 20%.
+- **Pooling attempts as if independent** gave 13% when each condition had its own tasks, and was harmless when tasks were all alike.
+- **Dropping crashed hard tasks** barely moved the fake-win rate: it costs power, not validity.
+- **Small studies also miss real effects:** at 20 tasks a clean design detected a modest effect only 10% of the time.
+
+**How it was generalised.** The study fixed 20 tasks, 5 attempts and a 50% success rate, with separate task sets per condition. The tool runs the same simulation on your design: your task count, attempts, success rate, hoped-for improvement and pairing (both versions on the same tasks is the default, which the study did not cover), with each "no" in the checklist simulated on its own so the verdict can rank what to fix. It adds a results checker and an AI reader for methods sections; the reader only answers the checklist from the text, and the statistics stay in code. The study repository holds its question, frozen plan, results and limitations; the copies of its scripts and outputs kept here are what this tool's tests check against.
 
 ## Run it
 

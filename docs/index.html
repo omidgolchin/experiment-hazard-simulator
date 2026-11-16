@@ -30,6 +30,14 @@
     </div>
     <h1>Agent Eval Planner</h1>
     <p class="kit-tagline">Before you compare two agents, prompts or models on a set of tasks: will the eval detect a real improvement, and how likely is it to show a fake one?</p>
+    <div class="start-here">
+      <p class="sh-q"><b>It answers:</b> before you compare two agents, prompts or models on a set of tasks: how likely the eval is to detect the improvement you care about, how likely it is to show a fake one, how many tasks you need and what to fix first. After you run it: the honest interval on your results.</p>
+      <ol>
+        <li><b>Pick the situation closest to yours</b> in "Start from a common situation", or keep the small benchmark already filled in.</li>
+        <li><b>Answer the cards one at a time:</b> how many tasks and attempts, today's success rate and the improvement you hope for, then the eight-question checklist. <i>Jump to the verdict</i> under any card skips ahead. Already ran the eval? Switch to <i>After you run</i>.</li>
+        <li><b>Read the verdict</b> and its ranked list of what to fix first. Before you rely on it, check <a href="#fit" class="open-details">when to use this tool, and when not</a>.</li>
+      </ol>
+    </div>
   </header>
 
   <div class="tool-modes ba-switch" role="group" aria-label="Before or after you run?">
@@ -42,7 +50,7 @@
     <p class="mode-intro">Plan my eval, one question at a time. Each card says why it matters; the verdict is on the last card and updates as you answer. Already run it? Switch to <b>After you run</b> to check your results or a methods write-up.</p>
     <form class="wiz" id="f-plan" novalidate onsubmit="return false">
       <div class="panel-head"><h2>Your eval</h2>
-        <select class="example" id="example" aria-label="Load an example"><option value="">Load example…</option></select></div>
+        <select class="example" id="example" aria-label="Start from a common situation"><option value="">Start from a common situation…</option></select></div>
 
       <div class="panel wiz-card wiz-step" data-step-title="How big is the eval?">
         <h2 tabindex="-1">How big is the eval?</h2>
@@ -174,6 +182,35 @@
       </div>
     </details>
   </section>
+
+  <details class="more guide" id="fit">
+    <summary>When to use it, and when not <span class="sub">assumptions, limits, alternatives</span></summary>
+    <div class="more-body small">
+      <p><b>Use it</b> before running an eval that compares two versions of an agent, prompt or model on a fixed set of tasks scored pass or fail, to size it and fix the design; and after it, to read the result per task rather than per attempt.</p>
+      <p><b>It assumes</b> the following. Each line says what happens to the answer when your case breaks the assumption.</p>
+      <table class="fit-table">
+        <thead><tr><th>Assumption</th><th>If yours differs</th></tr></thead>
+        <tbody>
+          <tr><td>Each attempt is scored pass or fail.</td><td>Graded scores (a 1-to-10 judge rating, partial credit) need a different model. As a first cut, set a pass threshold and use pass rates.</td></tr>
+          <tr><td>Tasks differ in difficulty, and attempts on the same task succeed or fail together.</td><td>This is what makes the task the unit of analysis. If your tasks are near-identical, pooling attempts matters less.</td></tr>
+          <tr><td>The improvement is the same size on every task.</td><td>Real improvements are larger on some tasks and zero on others. The chance to detect is then lower than shown; ask for a larger task count.</td></tr>
+          <tr><td>Each hazard's strength is a setting you choose (the default is a realistic middle value).</td><td>The tool shows the mechanism and its scale, not how strong a hazard is in your eval. Move the slider to the strength you suspect.</td></tr>
+          <tr><td>The comparison is between two versions.</td><td>For several versions, compare each with the baseline and correct for the number of comparisons, or plan a larger eval.</td></tr>
+          <tr><td>Success rates are not near 0% or 100%.</td><td>Near the extremes, few tasks carry information. Make the task set harder or easier first.</td></tr>
+        </tbody>
+      </table>
+      <p><b>Do not use it</b> for open-ended human preference studies (use a paired-preference design with its own power analysis), for tracking a single model's score over time, or as proof that an eval is sound: a clean verdict means the hazards it checks are handled, not that the tasks measure what you care about.</p>
+    </div>
+  </details>
+
+  <details class="more guide" id="origin">
+    <summary>Where this tool comes from <span class="sub">the problem and data it was built on, and how it was generalised</span></summary>
+    <div class="more-body small">
+      <p>The tool comes out of a study, <a href="https://github.com/omidgolchin/agent-eval-hazards-study">"How design hazards fake wins in LLM-agent experiments"</a>. It simulated two conditions with no real difference, added one design hazard at a time, and counted how often the study would still report a significant improvement. With no hazard the rate is 5%, as it should be. With one:</p>
+      <ul><li><b>Best-of-3 for the new version alone</b> gave fake wins in 91% of evals.</li><li><b>Picking the best of five metrics</b> gave 22%, and an <b>unblinded judge</b> that flips 20% of the new version's failures gave 20%.</li><li><b>Pooling attempts as if independent</b> gave 13% when each condition had its own tasks, and was harmless when tasks were all alike.</li><li><b>Dropping crashed hard tasks</b> barely moved the fake-win rate: it costs power, not validity.</li><li><b>Small studies also miss real effects:</b> at 20 tasks a clean design detected a modest effect only 10% of the time.</li></ul>
+      <p><b>How it was generalised.</b> The study fixed 20 tasks, 5 attempts and a 50% success rate, with separate task sets per condition. The tool runs the same simulation on your design: your task count, attempts, success rate, hoped-for improvement and pairing (both versions on the same tasks is the default, which the study did not cover), with each "no" in the checklist simulated on its own so the verdict can rank what to fix. It adds a results checker and an AI reader for methods sections; the reader only answers the checklist from the text, and the statistics stay in code.</p>
+    </div>
+  </details>
 
   <footer class="kit-footer">
     <p class="kit-siblings"></p>

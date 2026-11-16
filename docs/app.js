@@ -2,6 +2,9 @@
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
+  function openDetails(id) { var d = document.getElementById(id); if (d && d.tagName === "DETAILS") { d.open = true; d.scrollIntoView({ block: "start" }); var su = d.querySelector("summary"); if (su) su.focus(); } }
+  document.querySelectorAll("a.open-details").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); openDetails(a.getAttribute("href").slice(1)); }); });
+  if (location.hash === "#fit" || location.hash === "#origin") openDetails(location.hash.slice(1));
   var F = Tool.fmt;
   var NOISE = 0.5;
 
@@ -33,12 +36,25 @@
   ];
   var DEFAULTS = { mode: "plan", tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", paired: "1", gainCheck: 5 };
   HAZ.forEach(function (h) { DEFAULTS["h_" + h.key] = h.numeric ? 1 : ""; if (h.param) DEFAULTS["v_" + h.key] = h.param.def; });
+  /* Common situations. Settings are illustrative. To add one, append {label, why, v, h}: v holds the
+     design fields, h the checklist answers that are "No" (1), or a count for metrics. */
   var EXAMPLES = [
     { label: "Small agent benchmark (60 tasks)", v: { tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", paired: "1" }, h: {} },
     { label: "Judged chat eval with retries for the new version", v: { tasks: 120, attempts: 3, rate: 41, gain: 5, spread: "1", paired: "1" }, h: { compute: 1, judge: 1, failures: 1 } },
     { label: "Large coding benchmark (300 tasks)", v: { tasks: 300, attempts: 1, rate: 35, gain: 5, spread: "2", paired: "1" }, h: {} },
     { label: "Separate task sets, attempts pooled", v: { tasks: 50, attempts: 5, rate: 50, gain: 10, spread: "2", paired: "0" }, h: { unit: 1 } },
-    { label: "Five metrics, report the best", v: { tasks: 80, attempts: 3, rate: 60, gain: 8, spread: "1", paired: "1" }, h: { metrics: 5 } }
+    { label: "Five metrics, report the best", v: { tasks: 80, attempts: 3, rate: 60, gain: 8, spread: "1", paired: "1" }, h: { metrics: 5 } },
+    { label: "New run against last month's baseline numbers", v: { tasks: 100, attempts: 3, rate: 50, gain: 5, spread: "1", paired: "1" }, h: { drift: 1 } },
+    { label: "Prompt test where the prompts differ in more than one way", v: { tasks: 100, attempts: 3, rate: 50, gain: 5, spread: "1", paired: "1" }, h: { cue: 1 } }
+  ];
+  var WHY_EX = [
+    "A clean design: both versions on the same 60 tasks, 3 attempts each, every checklist answer safe. The question is only whether 60 tasks are enough.",
+    "Three common shortcuts at once: the new version gets retries, the judge can see which version wrote each answer, and crashed runs are dropped.",
+    "Many tasks, one attempt each, and a small hoped-for gain. Tasks, not attempts, carry the evidence.",
+    "Each version ran on its own sample of tasks and attempts were counted as if independent: the setting where pooling fakes wins.",
+    "Five metrics examined and the best one reported: each extra metric is another chance at a fake win.",
+    "The baseline was run weeks ago and the new version today, so any change in the model or the API in between counts as an improvement.",
+    "The two prompts differ in more than the change being tested. Wording that hints at the expected behavior can produce a win the change itself did not earn."
   ];
   var state = Tool.readParams(DEFAULTS);
   var lastPlan = null, lastCheck = null, runId = 0;
@@ -81,10 +97,10 @@
   EXAMPLES.forEach(function (ex, i) { var o = document.createElement("option"); o.value = i; o.textContent = ex.label; $("example").appendChild(o); });
   $("example").addEventListener("change", function () {
     if (this.value === "") return;
-    var ex = EXAMPLES[+this.value]; setInputs(ex.v);
+    var i = +this.value, ex = EXAMPLES[i]; setInputs(ex.v);
     HAZ.forEach(function (h) { $("h_" + h.key).value = h.numeric ? (ex.h[h.key] || 1) : (ex.h[h.key] ? "1" : "0"); if (h.param) $("v_" + h.key).value = h.param.def; });
     this.value = ""; document.querySelectorAll(".field.filled").forEach(function (f) { f.classList.remove("filled"); });
-    Tool.exampleWatch($("f-plan"), "<b>" + ex.label + "</b>. Its checklist answers belong to the example: set each one for your own eval.");
+    Tool.exampleWatch($("f-plan"), "<b>" + ex.label + ".</b> " + (WHY_EX[+i] || "") + " Its checklist answers belong to the example: set each one for your own eval.");
     syncChecklist(); runPlan(); wizGo(wizSteps.length - 1, false);
   });
   var q0 = new URLSearchParams(location.search);
