@@ -84,9 +84,9 @@
       <div class="qlist" id="qlist"></div>
 
       <div class="wiz-step wiz-summary" data-step-title="Your verdict" tabindex="-1" hidden>
-        <section class="panel verdict" id="verdict" aria-live="polite">
+        <section class="panel verdict" id="verdict">
           <p class="v-kicker">Verdict</p>
-          <p class="v-title" id="vTitle">…</p>
+          <p class="v-title" id="vTitle" aria-live="polite" aria-atomic="true">…</p>
           <p class="v-body" id="vBody"></p>
           <div class="kpis" id="kpis"></div>
         </section>
@@ -147,9 +147,9 @@
         </div>
       </form>
       <div>
-        <section class="panel verdict v-neutral" id="cVerdict" aria-live="polite">
+        <section class="panel verdict v-neutral" id="cVerdict">
           <p class="v-kicker">Result</p>
-          <p class="v-title" id="cTitle">Paste results to check them</p>
+          <p class="v-title" id="cTitle" aria-live="polite" aria-atomic="true">Paste results to check them</p>
           <p class="v-body" id="cBody">Or press Load example results.</p>
           <div class="kpis" id="cKpis"></div>
           <div class="checks" id="cChecks"></div>

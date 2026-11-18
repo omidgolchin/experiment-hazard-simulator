@@ -2,6 +2,10 @@
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
+  /* Live regions (the verdict title) are written only when their text
+   * changes, so a screen reader does not announce an unchanged verdict
+   * again after every pause in typing. */
+  var setLive = function (el, s) { s = String(s); if (el.textContent !== s) el.textContent = s; };
   function openDetails(id) { var d = document.getElementById(id); if (d && d.tagName === "DETAILS") { d.open = true; d.scrollIntoView({ block: "start" }); var su = d.querySelector("summary"); if (su) su.focus(); } }
   document.querySelectorAll("a.open-details").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); openDetails(a.getAttribute("href").slice(1)); }); });
   if (location.hash === "#fit" || location.hash === "#origin") openDetails(location.hash.slice(1));
@@ -211,9 +215,9 @@
     var url = { mode: "plan" }; ["tasks", "attempts", "rate", "gain", "spread", "paired"].forEach(function (k) { url[k] = $(k).value; });
     HAZ.forEach(function (h) { url["h_" + h.key] = $("h_" + h.key).value; if (h.param) url["v_" + h.key] = $("v_" + h.key).value; });
     Tool.writeParams(url);
-    if (!v) { $("vTitle").textContent = "Check the highlighted inputs"; $("vBody").textContent = ""; $("kpis").innerHTML = ""; $("checks").innerHTML = ""; $("fixList").innerHTML = ""; $("verdict").className = "panel verdict v-neutral"; return; }
+    if (!v) { setLive($("vTitle"), "Check the highlighted inputs"); $("vBody").textContent = ""; $("kpis").innerHTML = ""; $("checks").innerHTML = ""; $("fixList").innerHTML = ""; $("verdict").className = "panel verdict v-neutral"; return; }
     var my = ++runId;
-    $("vTitle").textContent = "Simulating…";
+    setLive($("vTitle"), "Simulating…");
     setTimeout(function () { if (my === runId) computePlan(v); }, 10);
   }
   function computePlan(v) {
@@ -251,7 +255,7 @@
     if (biased) body = "If B were no better than A, this design would still show a significant difference " + pct(P.fake) + " of the time, instead of about 5%. " + (flagged.length ? "Fix " + (flagged.length === 1 ? "the flagged item" : "the " + flagged.length + " flagged items") + " below. " : "") + powerSent;
     else body = powerSent + " Fake wins stay near " + pct(P.fake) + (P.fake <= 0.065 ? ", as they should." : ".") + (flagged.length ? " Your answers still cost something: see the flagged items." : "");
     if (v.unchecked.length) body += " " + v.unchecked.length + " of " + HAZ.filter(function (h) { return !h.numeric; }).length + " design questions are still \"Not checked yet\"; the numbers assume each one is fine.";
-    $("vTitle").textContent = title; $("vBody").textContent = body; $("verdict").className = "panel verdict v-" + cls;
+    setLive($("vTitle"), title); $("vBody").textContent = body; $("verdict").className = "panel verdict v-" + cls;
     P.title = title; P.body = body;
     $("kpis").innerHTML = [[pct(P.power), "chance to detect +" + v.gain + " pts", "power"], [pct(P.fake), "fake wins (aim: ~5%)", "fake"], [F.int(P.n80), "tasks for 80%"], [F.int(v.tasks * v.attempts * 2), "runs in total"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + (x[2] ? ' <button type="button" data-tip="' + x[2] + '"></button>' : "") + "</span></div>"; }).join("");
     /* The verdict's fix list: every risky answer, ranked by what it does to
@@ -367,9 +371,9 @@
     var cur = $("baseline").value;
     $("baseline").innerHTML = versions.map(function (v) { return '<option value="' + v.replace(/"/g, "&quot;") + '">' + v + "</option>"; }).join("");
     if (versions.indexOf(cur) >= 0) $("baseline").value = cur;
-    if (!parsed.rows.length) { lastCheck = null; $("cTitle").textContent = "Paste results to check them"; $("cBody").textContent = "Or press Load example results."; $("cKpis").innerHTML = ""; $("cChecks").innerHTML = ""; $("cVerdict").className = "panel verdict v-neutral"; $("checkChart").innerHTML = ""; $("checkCaption").textContent = ""; return; }
+    if (!parsed.rows.length) { lastCheck = null; setLive($("cTitle"), "Paste results to check them"); $("cBody").textContent = "Or press Load example results."; $("cKpis").innerHTML = ""; $("cChecks").innerHTML = ""; $("cVerdict").className = "panel verdict v-neutral"; $("checkChart").innerHTML = ""; $("checkCaption").textContent = ""; return; }
     var r = EvalSim.analyzeResults(parsed.rows, { a: $("baseline").value });
-    if (r.error) { lastCheck = null; $("cTitle").textContent = "Can't analyze these rows yet"; $("cBody").textContent = r.error; $("cKpis").innerHTML = ""; $("cChecks").innerHTML = ""; $("cVerdict").className = "panel verdict v-neutral"; return; }
+    if (r.error) { lastCheck = null; setLive($("cTitle"), "Can't analyze these rows yet"); $("cBody").textContent = r.error; $("cKpis").innerHTML = ""; $("cChecks").innerHTML = ""; $("cVerdict").className = "panel verdict v-neutral"; return; }
     r.bad = parsed.bad; lastCheck = r;
     var pts = function (x) { return (x >= 0 ? "+" : "−") + Math.abs(100 * x).toFixed(1); };
     var title, cls;
@@ -382,7 +386,7 @@
     var naiveSig = r.naiveP < 0.05, taskSig = r.p < 0.05;
     if (naiveSig !== taskSig) body += naiveSig ? " Counting attempts as independent would have called this significant; the task-level analysis does not." : " Counting attempts as independent would have missed it: pairing by task removes task difficulty from the comparison.";
     title = title.charAt(0).toUpperCase() + title.slice(1);
-    $("cTitle").textContent = title; $("cBody").textContent = body; $("cVerdict").className = "panel verdict v-" + cls;
+    setLive($("cTitle"), title); $("cBody").textContent = body; $("cVerdict").className = "panel verdict v-" + cls;
     r.title = title; r.body = body;
     $("cKpis").innerHTML = [[pts(r.diff), "points, " + r.vB + " − " + r.vA], [Math.round(100 * r.rateB) + "%", r.vB + " success (" + r.vA + " " + Math.round(100 * r.rateA) + "%)"], [r.paired, "tasks on both versions", "paired"], [r.p < 0.001 ? "< 0.001" : r.p.toFixed(3), "p-value (paired t)", "pvalue"]].map(function (x) { return '<div class="kpi"><span class="k-val">' + x[0] + '</span><span class="k-lbl">' + x[1] + (x[2] ? ' <button type="button" data-tip="' + x[2] + '"></button>' : "") + "</span></div>"; }).join("");
     var c = [];

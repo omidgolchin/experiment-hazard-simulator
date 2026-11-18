@@ -80,3 +80,14 @@ checkpoints; log and continue.)
 - Each "no" in the checklist is simulated alone to classify it as creating fake wins, costing power, or minor at these settings. Pooling attempts is conservative under pairing (costs power) and anti-conservative without it (fake wins); the tool shows which.
 - Tasks for 80% from the simulated spread of per-task differences, checked by simulated power (test: 80% +/- 3 points).
 - The original hazard engine moved to `sim/hazard_sim.js`; its JS/Python agreement test still runs.
+
+## 2026-11-18: what a screen reader announces
+
+- Only the verdict title is announced. The whole verdict panel used to
+  be one `aria-live` region, and its KPI tiles and checks are rewritten
+  on every run, so a screen reader read them all again after each pause
+  in typing. Now the title alone carries `aria-live="polite"` and
+  `aria-atomic="true"`: a changed verdict is announced in full, and the
+  KPIs and checks stay on the page for the reader to move to. The title
+  is written only when its text changes, so an unchanged verdict is not
+  read out again.
