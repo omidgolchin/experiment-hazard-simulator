@@ -52,7 +52,7 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
   | Setting "A lot, like two models" | 0.87–0.99 | 0.91–0.98 | 0.89–0.98 |
 
   Without the task-by-version shift, the planner promised 80% and, at 5 runs per question, delivered about half that, because it treated extra runs as nearly as good as extra questions. With the setting that matches two different models, every plan reached at least 80% (a little above, so the plans are on the safe side). The smaller settings could not be checked against real data here.
-- **Planning from a pilot, checked against real runs.** A small pilot underestimates the spread of per-task differences about half the time, so the results checker raises it to its one-sided 80% upper confidence bound before planning, (n − 1)/χ²₀.₂₀(n − 1): 1.29× at 30 tasks, 1.21× at 50. On the same real runs, 150 random pilots of 30 or 50 questions (3 runs each) per model pair were used to plan the next eval at 1, 3 and 5 runs per question (`validation/check_pilot_margin.py`, results in `validation/pilot_margin.json`):
+- **Planning from a pilot, checked against real runs.** A small pilot underestimates the spread of per-task differences about half the time, so the results checker raises it to its one-sided 80% upper confidence bound before planning, (n − 1)/χ²₀.₂₀(n − 1): 1.29× at 30 tasks, 1.21× at 50 (Browne 1995, who showed by simulation that this reaches the planned power in about 80% of studies). On the same real runs, 150 random pilots of 30 or 50 questions (3 runs each) per model pair were used to plan the next eval at 1, 3 and 5 runs per question (`validation/check_pilot_margin.py`, results in `validation/pilot_margin.json`):
 
   | Plan from the pilot | Plans that reached 80% real power | Mean real power |
   |---|---|---|
@@ -153,6 +153,8 @@ cd docs && python3 -m http.server 8000  # the tool at http://localhost:8000
 - Hazard strengths are illustrative defaults you can change; the checklist cannot know how strong a hazard is in your setup, only that it is there.
 
 ## References
+
+- Browne, R. H. (1995). On the use of a pilot sample for sample size determination. *Statistics in Medicine*, 14(17), 1933–1940.
 
 - Hurlbert, S. H. (1984). Pseudoreplication and the design of ecological
   field experiments. *Ecological Monographs*, 54(2), 187–211.
