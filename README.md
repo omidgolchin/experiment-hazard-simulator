@@ -10,8 +10,8 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
 
 ## What it does
 
-- **Plan my eval (Before you run).** One question per card: tasks, attempts per task, current success rate and the improvement you hope to detect give the chance to detect it, the tasks needed for 80%, and the fake-win rate of your design. An eight-question checklist covers the ways agent evals go wrong; each risky answer is simulated, and the verdict ends with a ranked list of what to fix first. A "Jump to the verdict" link under every card takes you straight to the verdict with the answers you have given so far.
-- **Check my results (After you run).** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version.
+- **Plan my eval (Before you run).** One question per card: tasks, attempts per task, current success rate and the improvement you hope to detect give the chance to detect it, the tasks needed for 80%, and the fake-win rate of your design. Because how differently the two versions handle individual tasks is hard to know in advance, the verdict also shows the tasks needed if they differ a little, somewhat or a lot. An eight-question checklist covers the ways agent evals go wrong; each risky answer is simulated, and the verdict ends with a ranked list of what to fix first. A "Jump to the verdict" link under every card takes you straight to the verdict with the answers you have given so far.
+- **Check my results (After you run).** Paste one row per attempt (task, version, attempt, success) or upload a CSV. You get the difference with a task-level interval (paired t and a task bootstrap), next to the interval you would get by pooling attempts, plus checks for unequal compute and tasks that ran on only one version. With 2 or more attempts per task, it also measures how much the versions favour different tasks and says which setting to plan the next eval with.
 - **Check my methods section (After you run).** Paste the write-up of an eval (yours or a paper's). A language model (your key, or copy the prompt into any assistant) answers the checklist from it, quoting the sentence behind each answer, and lists what the write-up never states. The simulation then scores the design.
 - **Copy design report.** A Markdown checklist with the numbers, ready for a paper appendix or a pull request.
 - **Start here.** The page opens with the question it answers and three steps; a list of common situations fills the design; and a section says when to use the tool and when not.
@@ -24,12 +24,12 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
 | Compute parity | One version gets more attempts, retries or budget (best-of-k): a fake win almost every time. |
 | Crashes and timeouts | Dropping crashed runs or tasks for one version; the planner shows whether it biases the result or just costs power. |
 | Unparseable outputs | Different rules for unparseable outputs in each version. |
-| Unit of analysis | Pooling attempts as if independent. With separate task sets this inflates fake wins; with shared tasks it wastes power instead. The planner shows which. |
+| Unit of analysis | Pooling attempts as if independent. With separate task sets this inflates fake wins. With shared tasks it wastes power if the versions handle every task alike, and inflates fake wins if they favour different tasks. The planner shows which. |
 | Judge blinding | An LLM judge that can see which version produced an output. |
 | Model drift | Versions run at different times or on a changed model. |
 | Prompt cue | Prompts that differ in more than the thing being tested. |
 | Metrics examined | Picking the best of several metrics after the fact. |
-| Tasks vs attempts | Whether more attempts per task can substitute for more tasks in your design. |
+| Tasks vs attempts | How much more attempts per task can replace more tasks in your design. Attempts average out luck, not the tasks that suit one version better, so they usually cannot. |
 
 ## Design decisions
 
@@ -38,20 +38,35 @@ For anyone comparing two AI agents, prompts or models on a set of tasks: before 
 - **Every hazard is simulated, not just listed.** Each "no" in the checklist is run through the simulation alone, so the verdict separates hazards that create fake wins from ones that only cost power and ones that barely matter at your settings.
 - **Fake wins count significant differences in either direction**, so a sound design sits at 5%; the chance to detect counts only wins for the new version.
 - **Sample size from the simulated spread of per-task differences**, n = ((z₀.₉₇₅ + z₀.₈) · sd / gain)² + 1, checked against simulated power on the chart (tested: the formula's task count delivers 80% ± 3 points).
+- **Some tasks suit one version better.** Each task gets a shift between the versions that repeat attempts cannot average away (normal on the log-odds scale, split equally between A and B so neither starts ahead). The four settings give about 0%, 10%, 25% and 50% of the single-attempt spread in per-task differences. "A lot" matches two different models on real runs (41–61% measured); the smaller settings are assumptions, so the verdict shows the task count for each.
 - **Improvements in points, not log-odds.** You enter the improvement in success-rate points; the planner converts it to the model's scale by quadrature over task difficulty.
 - **The AI check only reads.** It answers the checklist from text and must quote its source; the statistics stay in code.
 
 ## Validation
 
-- **33 tests** (`pytest`): false alarms of the clean design at 5%; the sample-size formula delivering 80%; each hazard raising false alarms; pooling attempts inflating false alarms only without pairing; the JavaScript engine against the NumPy reference (`sim/planner.py`) on false alarms, power and effect sizes; the results checker against `scipy.stats.ttest_1samp`; detection of unequal compute and unmatched tasks; the original hazard simulator's JS/Python agreement; the AI check's prompt and reply handling; the wizard's "Jump to the verdict" control, including a browser check that the verdict it lands on matches the full walk-through (`scripts/check_wizard_jump.js`).
+- **Checked against real runs.** The planner's task counts were tested on 6,000 real runs: three models on the same 400 GSM8K questions, 5 runs each, from the [error-bars study](https://github.com/omidgolchin/llm-eval-error-bars). For each pair of models, evals of the planned size were drawn again and again from the real runs, and we counted how often they found the real gain (`validation/check_real_runs.py`, results in `validation/results.json`):
+
+  | Real power of a plan for 80% | 1 run per question | 3 runs | 5 runs |
+  |---|---|---|---|
+  | Before this fix (same effect on every task) | 0.76–0.95 | 0.53–0.69 | 0.41–0.49 |
+  | Setting "A lot, like two models" | 0.87–0.99 | 0.91–0.98 | 0.89–0.98 |
+
+  Without the task-by-version shift, the planner promised 80% and, at 5 runs per question, delivered about half that, because it treated extra runs as nearly as good as extra questions. With the setting that matches two different models, every plan reached at least 80% (a little above, so the plans are on the safe side). The smaller settings could not be checked against real data here.
+- **47 tests** (`pytest`): false alarms of the clean design at 5%; the sample-size formula delivering 80%; with the task-by-version shift, false alarms still at 5% (also away from a 50% rate), pooled attempts faking wins even with shared tasks, attempts unable to remove it, each setting giving its stated share, and the planned task counts delivering their power on the real runs; each hazard raising false alarms; pooling attempts inflating false alarms only without pairing; the JavaScript engine against the NumPy reference (`sim/planner.py`) on false alarms, power and effect sizes; the results checker against `scipy.stats.ttest_1samp`; detection of unequal compute and unmatched tasks; the original hazard simulator's JS/Python agreement; the AI check's prompt and reply handling; the wizard's "Jump to the verdict" control, including a browser check that the verdict it lands on matches the full walk-through (`scripts/check_wizard_jump.js`).
 - **AI check extraction:** a 20-item test set of methods paragraphs (`assist/testset.json`), from careful to careless to silent. Score any model with `ANTHROPIC_API_KEY=... node scripts/eval_assist.js`. Not yet run for this release.
 - Checked on desktop and phone widths, in light and dark themes.
 
 ## What I learned
 
-- Pseudo-replication surprised me. It inflates false positives only when
-  each condition draws its own task sample. Run both conditions on the
-  same tasks and the naive standard error turns conservative instead.
+- Pseudo-replication surprised me twice. In my simulation it inflated
+  false positives only when each condition drew its own task sample, and
+  turned conservative when both ran the same tasks. Real runs said
+  otherwise: two models on the same GSM8K questions favour different
+  questions, and the pooled interval covered the true difference only
+  85–88% of the time. My simulation had given every task the same
+  effect, and that one assumption also made extra attempts look almost
+  as good as extra tasks. Checking the planner against real data caught
+  it; a simulation can only find what its model allows.
 - I modeled exclusion wrong the first time. Dropping single runs is
   mostly absorbed by the per-task analysis. The bias appears when a hard
   task breaks the treated agent and all of its runs are lost together,

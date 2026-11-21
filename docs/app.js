@@ -11,6 +11,12 @@
   if (location.hash === "#fit" || location.hash === "#origin") openDetails(location.hash.slice(1));
   var F = Tool.fmt;
   var NOISE = 0.5;
+  /* Task-by-version interaction settings (logit SD of the per-task shift between
+   * versions). Each gives roughly the stated share of the single-attempt spread of
+   * per-task differences (checked in tests/test_planner.py). "A lot" matches two
+   * different models on GSM8K (41-61% measured, validation/); the two smaller
+   * settings are assumptions, which is why the verdict shows all three. */
+  var VARY = [{ v: 1.1, label: "a little", opt: "A little", share: "about 10%" }, { v: 2, label: "somewhat", opt: "Somewhat", share: "about 25%" }, { v: 3.75, label: "a lot", opt: "A lot, like two models", share: "about 50%" }];
 
   /* The checklist: the eight hazards of the agent-experiment-methodology
    * skill, asked as questions about the visitor's own setup. */
@@ -38,18 +44,18 @@
     { key: "metrics", name: "Metrics examined", q: "How many metrics will you look at before choosing what to report?", numeric: true,
       fix: "Name one primary metric before running, and report every metric you looked at." }
   ];
-  var DEFAULTS = { mode: "plan", tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", paired: "1", gainCheck: 5 };
+  var DEFAULTS = { mode: "plan", tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", vary: "2", paired: "1", gainCheck: 5 };
   HAZ.forEach(function (h) { DEFAULTS["h_" + h.key] = h.numeric ? 1 : ""; if (h.param) DEFAULTS["v_" + h.key] = h.param.def; });
   /* Common situations. Settings are illustrative. To add one, append {label, why, v, h}: v holds the
      design fields, h the checklist answers that are "No" (1), or a count for metrics. */
   var EXAMPLES = [
-    { label: "Small agent benchmark (60 tasks)", v: { tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", paired: "1" }, h: {} },
-    { label: "Judged chat eval with retries for the new version", v: { tasks: 120, attempts: 3, rate: 41, gain: 5, spread: "1", paired: "1" }, h: { compute: 1, judge: 1, failures: 1 } },
-    { label: "Large coding benchmark (300 tasks)", v: { tasks: 300, attempts: 1, rate: 35, gain: 5, spread: "2", paired: "1" }, h: {} },
-    { label: "Separate task sets, attempts pooled", v: { tasks: 50, attempts: 5, rate: 50, gain: 10, spread: "2", paired: "0" }, h: { unit: 1 } },
-    { label: "Five metrics, report the best", v: { tasks: 80, attempts: 3, rate: 60, gain: 8, spread: "1", paired: "1" }, h: { metrics: 5 } },
-    { label: "New run against last month's baseline numbers", v: { tasks: 100, attempts: 3, rate: 50, gain: 5, spread: "1", paired: "1" }, h: { drift: 1 } },
-    { label: "Prompt test where the prompts differ in more than one way", v: { tasks: 100, attempts: 3, rate: 50, gain: 5, spread: "1", paired: "1" }, h: { cue: 1 } }
+    { label: "Small agent benchmark (60 tasks)", v: { tasks: 60, attempts: 3, rate: 50, gain: 10, spread: "1", vary: "2", paired: "1" }, h: {} },
+    { label: "Judged chat eval with retries for the new version", v: { tasks: 120, attempts: 3, rate: 41, gain: 5, spread: "1", vary: "2", paired: "1" }, h: { compute: 1, judge: 1, failures: 1 } },
+    { label: "Large coding benchmark (300 tasks)", v: { tasks: 300, attempts: 1, rate: 35, gain: 5, spread: "2", vary: "2", paired: "1" }, h: {} },
+    { label: "Separate task sets, attempts pooled", v: { tasks: 50, attempts: 5, rate: 50, gain: 10, spread: "2", vary: "2", paired: "0" }, h: { unit: 1 } },
+    { label: "Five metrics, report the best", v: { tasks: 80, attempts: 3, rate: 60, gain: 8, spread: "1", vary: "2", paired: "1" }, h: { metrics: 5 } },
+    { label: "New run against last month's baseline numbers", v: { tasks: 100, attempts: 3, rate: 50, gain: 5, spread: "1", vary: "2", paired: "1" }, h: { drift: 1 } },
+    { label: "Prompt test where the prompts differ in more than one way", v: { tasks: 100, attempts: 3, rate: 50, gain: 5, spread: "1", vary: "2", paired: "1" }, h: { cue: 1 } }
   ];
   var WHY_EX = [
     "A clean design: both versions on the same 60 tasks, 3 attempts each, every checklist answer safe. The question is only whether 60 tasks are enough.",
@@ -108,11 +114,11 @@
     syncChecklist(); runPlan(); wizGo(wizSteps.length - 1, false);
   });
   var q0 = new URLSearchParams(location.search);
-  if (!["tasks", "attempts", "rate", "gain", "spread", "paired"].some(function (k) { return q0.has(k); }))
+  if (!["tasks", "attempts", "rate", "gain", "spread", "vary", "paired"].some(function (k) { return q0.has(k); }))
     Tool.exampleWatch($("f-plan"), "<b>A small agent benchmark:</b> 60 tasks, 3 attempts each, 50% success today, hoping for +10 points. Type your own design over it, then answer the checklist.");
   function debounce(fn, ms) { var t; return function () { clearTimeout(t); t = setTimeout(fn, ms); }; }
   var runPlanSoon = debounce(runPlan, 250);
-  ["tasks", "attempts", "rate", "gain", "spread", "paired"].forEach(function (id) { $(id).addEventListener("input", runPlanSoon); $(id).addEventListener("change", runPlanSoon); });
+  ["tasks", "attempts", "rate", "gain", "spread", "vary", "paired"].forEach(function (id) { $(id).addEventListener("input", runPlanSoon); $(id).addEventListener("change", runPlanSoon); });
   HAZ.forEach(function (h) {
     $("h_" + h.key).addEventListener("change", function () { syncChecklist(); runPlanSoon(); });
     $("h_" + h.key).addEventListener("input", function () { syncChecklist(); runPlanSoon(); });
@@ -192,7 +198,7 @@
 
   /* ---------- plan ---------- */
   function readPlan() {
-    var v = { tasks: num("tasks"), attempts: num("attempts"), rate: num("rate"), gain: num("gain"), spread: Number($("spread").value), paired: $("paired").value === "1" };
+    var v = { tasks: num("tasks"), attempts: num("attempts"), rate: num("rate"), gain: num("gain"), spread: Number($("spread").value), vary: Number($("vary").value), paired: $("paired").value === "1" };
     var ok = true;
     function need(id, cond, msg) { fieldError(id, cond ? "" : msg); if (!cond) ok = false; }
     need("tasks", v.tasks >= 5 && v.tasks <= 2000 && Number.isInteger(v.tasks), "Enter the number of tasks as a whole number from 5 to 2,000.");
@@ -212,7 +218,7 @@
   }
   function runPlan() {
     var v = readPlan();
-    var url = { mode: "plan" }; ["tasks", "attempts", "rate", "gain", "spread", "paired"].forEach(function (k) { url[k] = $(k).value; });
+    var url = { mode: "plan" }; ["tasks", "attempts", "rate", "gain", "spread", "vary", "paired"].forEach(function (k) { url[k] = $(k).value; });
     HAZ.forEach(function (h) { url["h_" + h.key] = $("h_" + h.key).value; if (h.param) url["v_" + h.key] = $("v_" + h.key).value; });
     Tool.writeParams(url);
     if (!v) { setLive($("vTitle"), "Check the highlighted inputs"); $("vBody").textContent = ""; $("kpis").innerHTML = ""; $("checks").innerHTML = ""; $("fixList").innerHTML = ""; $("verdict").className = "panel verdict v-neutral"; return; }
@@ -221,9 +227,9 @@
     setTimeout(function () { if (my === runId) computePlan(v); }, 10);
   }
   function computePlan(v) {
-    var sigTot = Math.sqrt(v.spread * v.spread + NOISE * NOISE);
+    var sigTot = EvalSim.totalSigma(v.spread, NOISE, v.vary);
     var base = EvalSim.baseFor(v.rate / 100, sigTot), delta = EvalSim.deltaFor(v.rate / 100, v.gain / 100, sigTot);
-    var clean = { n_tasks: v.tasks, n_attempts: v.attempts, base_logit: base, sigma_task: v.spread, sigma_noise: NOISE, paired: v.paired };
+    var clean = { n_tasks: v.tasks, n_attempts: v.attempts, base_logit: base, sigma_task: v.spread, sigma_noise: NOISE, sigma_int: v.vary, paired: v.paired };
     var N = 1500;
     var power = EvalSim.rate(Object.assign({}, clean, { delta: delta }), N, 7);
     var fake = EvalSim.rate(Object.assign({}, clean, v.haz), N, 8);
@@ -231,6 +237,13 @@
     var n80 = EvalSim.tasksFor80(sd, v.gain / 100);
     var sd2 = EvalSim.taskDiffSd(Object.assign({}, clean, { delta: delta, n_attempts: v.attempts * 2 }));
     var n80x2 = EvalSim.tasksFor80(sd2, v.gain / 100);
+    /* Tasks for 80% at each interaction setting: the planner cannot know this
+     * one, so the verdict shows the range it spans. */
+    var range = VARY.map(function (x) {
+      var st = EvalSim.totalSigma(v.spread, NOISE, x.v), b0 = EvalSim.baseFor(v.rate / 100, st), d0 = EvalSim.deltaFor(v.rate / 100, v.gain / 100, st);
+      var c0 = Object.assign({}, clean, { base_logit: b0, sigma_int: x.v, delta: d0 });
+      return { x: x, n80: EvalSim.tasksFor80(EvalSim.taskDiffSd(c0), v.gain / 100) };
+    });
     var impacts = v.unsafe.map(function (h) {
       var one = {}; Object.keys(v.haz).forEach(function (k) { if ((h.key === "unit" && k === "naive_se") || (h.key === "metrics" && k === "n_outcomes") || (h.param && k === h.param.id)) one[k] = v.haz[k]; });
       var f = EvalSim.rate(Object.assign({}, clean, one), 1000, 21);
@@ -238,7 +251,7 @@
       return { h: h, fake: f.rate_any, power: pw.rate };
     });
     var de = EvalSim.designEffect(v.spread, NOISE, v.tasks, v.attempts);
-    lastPlan = { v: v, base: base, delta: delta, clean: clean, power: power.rate, fake: fake.rate_any, fakeSe: fake.mc_se_any, sd: sd, n80: n80, n80x2: n80x2, impacts: impacts, de: de };
+    lastPlan = { v: v, base: base, delta: delta, clean: clean, power: power.rate, fake: fake.rate_any, fakeSe: fake.mc_se_any, sd: sd, n80: n80, n80x2: n80x2, range: range, impacts: impacts, de: de };
     renderPlan(); drawPower();
   }
   function renderPlan() {
@@ -274,12 +287,13 @@
     if (v.unchecked.length) c.push(["warn", "UNANSWERED", "Design checklist", "Not checked yet: " + v.unchecked.map(function (h) { return h.name.toLowerCase(); }).join(", ") + ". The simulation treats these as safe, so a fake win from any of them is not counted. Answer them to make the verdict yours."]);
     c.push([v.paired ? "ok" : "warn", v.paired ? "PAIRED" : "UNPAIRED", "Same tasks for both", v.paired ? "Tasks, paired: each task's difference between versions is one data point, which cancels task difficulty." : "Separate task sets: task difficulty adds noise to the comparison. Running both versions on the same tasks would need fewer tasks."]);
     var runs1 = P.n80 * v.attempts, runs2 = P.n80x2 * v.attempts * 2;
+    c.push(["info", "RANGE", "Tasks the versions handle differently", "Tasks for 80% if the versions favour different tasks " + P.range.map(function (r) { return r.x.label + ": " + F.int(r.n80); }).join("; ") + ". You chose \"" + ($("vary").selectedOptions[0] || {}).text + "\". Run a pilot with 2 or more attempts per task and paste it into Check my results to measure yours."]);
     c.push(runs2 > runs1 * 1.15
-      ? ["info", "TIP", "Tasks vs attempts", "Doubling attempts to " + v.attempts * 2 + " per task would still need about " + F.int(P.n80x2) + " tasks for 80% (vs " + F.int(P.n80) + "), so " + F.int(runs2) + " runs per version instead of " + F.int(runs1) + ". New tasks buy more certainty than repeat attempts here."]
-      : ["info", "TIP", "Tasks vs attempts", "With the same tasks for both versions, task difficulty cancels out, so extra attempts work almost as well as extra tasks: " + v.attempts * 2 + " attempts on about " + F.int(P.n80x2) + " tasks also reaches 80%. Pick the cheaper option; new tasks also make the result more general."]);
+      ? ["info", "TIP", "Tasks vs attempts", "Doubling attempts to " + v.attempts * 2 + " per task would still need about " + F.int(P.n80x2) + " tasks for 80% (vs " + F.int(P.n80) + "), so " + F.int(runs2) + " runs per version instead of " + F.int(runs1) + ". New tasks buy more certainty than repeat attempts: attempts average out luck, but not the tasks that suit one version better than the other."]
+      : ["info", "TIP", "Tasks vs attempts", "At these settings, doubling attempts to " + v.attempts * 2 + " per task would need about " + F.int(P.n80x2) + " tasks instead of " + F.int(P.n80) + ", a similar number of runs (" + F.int(runs2) + " vs " + F.int(runs1) + "). That holds only if the versions rarely favour different tasks; between two different models on real runs, extra attempts helped far less. When unsure, add tasks."]);
     $("checks").innerHTML = c.map(function (x) { return '<div class="check is-' + x[0] + '"><span class="badge">' + x[1] + '</span><div><span class="c-name">' + x[2] + '.</span> <span class="c-text">' + x[3] + "</span></div></div>"; }).join("");
     P.checks = c;
-    $("designEffect").textContent = v.paired ? "Your design: " + v.tasks + " tasks × " + v.attempts + " attempts per version, same tasks for both\nTask difficulty cancels in each task's difference between versions; what remains is attempt-to-attempt noise.\nSpread of per-task differences (simulated): " + P.sd.toFixed(3) + "\nTasks for 80% = ((1.96 + 0.84) × " + P.sd.toFixed(3) + " / " + (v.gain / 100).toFixed(3) + ")² + 1 = " + P.n80 : "Your design: " + v.tasks + " tasks × " + v.attempts + " attempts per version\nTask-level correlation of attempts (latent scale): " + P.de.icc.toFixed(2) + "\nDesign effect 1 + (attempts − 1) × correlation = " + P.de.deff.toFixed(2) + "\nSo " + v.tasks * v.attempts + " attempts per version carry about as much information as " + Math.round(P.de.effective) + " independent ones.\nSpread of per-task differences (simulated): " + P.sd.toFixed(3);
+    $("designEffect").textContent = v.paired ? "Your design: " + v.tasks + " tasks × " + v.attempts + " attempts per version, same tasks for both\nTask difficulty cancels in each task's difference between versions; what remains is attempt-to-attempt noise, which attempts average out, plus tasks that suit one version better, which they do not.\nSpread of per-task differences (simulated): " + P.sd.toFixed(3) + "\nTasks for 80% = ((1.96 + 0.84) × " + P.sd.toFixed(3) + " / " + (v.gain / 100).toFixed(3) + ")² + 1 = " + P.n80 : "Your design: " + v.tasks + " tasks × " + v.attempts + " attempts per version\nTask-level correlation of attempts (latent scale): " + P.de.icc.toFixed(2) + "\nDesign effect 1 + (attempts − 1) × correlation = " + P.de.deff.toFixed(2) + "\nSo " + v.tasks * v.attempts + " attempts per version carry about as much information as " + Math.round(P.de.effective) + " independent ones.\nSpread of per-task differences (simulated): " + P.sd.toFixed(3);
   }
   function drawPower() {
     var P = lastPlan, v = P.v;
@@ -395,6 +409,10 @@
     if (r.onlyOne.length) c.push(["warn", "DROPPED", "Unmatched tasks", r.onlyOne.length + " task" + (r.onlyOne.length === 1 ? "" : "s") + " ran on only one version and were left out (" + r.onlyOne.slice(0, 4).join(", ") + (r.onlyOne.length > 4 ? ", …" : "") + "). If one version crashed on them, that is itself a result."]);
     var tw = r.hi - r.lo, bw = r.bootHi - r.bootLo;
     c.push(Math.abs(tw - bw) > 0.25 * tw ? ["warn", "CHECK", "Interval methods", "The bootstrap interval (" + pts(r.bootLo) + " to " + pts(r.bootHi) + ") differs from the t-interval: the per-task differences are far from normal. Trust the bootstrap."] : ["ok", "AGREE", "Interval methods", "The task bootstrap (" + pts(r.bootLo) + " to " + pts(r.bootHi) + ") agrees with the t-interval."]);
+    if (r.interactionShare != null) {
+      var sh = r.interactionShare, near = sh < 0.175 ? VARY[0] : sh < 0.375 ? VARY[1] : VARY[2];
+      c.push(["info", "MEASURED", "Tasks the versions handle differently", "About " + Math.round(100 * sh) + "% of the spread in per-task differences comes from tasks that suit one version better than the other, which more attempts cannot average away. " + (sh < 0.05 ? "Little or none here, but a pilot cannot rule out a small amount: plan the next eval with \"A little\" (about 10%)." : "Plan the next eval with \"" + near.opt + "\" (" + near.share + ").") + (r.paired < 100 ? " With " + r.paired + " tasks this estimate is rough: if it falls between two settings, take the larger." : "")]);
+    }
     if (r.bad) c.push(["warn", "SKIPPED", "Unreadable rows", r.bad + " row" + (r.bad === 1 ? "" : "s") + " could not be read and were skipped."]);
     if (parsed.graded) c.unshift(["warn", "CUT AT 0.5", "Graded scores", parsed.graded + " results were scores between 0 and 1 rather than pass/fail. They were cut at 0.5 (0.7 counts as a success, 0.4 as a failure), so the detail in graded scores is lost. This tool analyzes pass/fail results."]);
     $("cChecks").innerHTML = c.map(function (x) { return '<div class="check is-' + x[0] + '"><span class="badge">' + x[1] + '</span><div><span class="c-name">' + x[2] + '.</span> <span class="c-text">' + x[3] + "</span></div></div>"; }).join("");
@@ -436,6 +454,7 @@
     attempts: { t: "Attempts per task", d: "Agents are random: the same task can pass once and fail the next time. Repeating attempts averages out that luck, but it cannot make up for too few tasks." },
     gain: { t: "Improvement to detect", d: "The smallest real gain, in percentage points, that you need the eval to catch. Halving it needs roughly four times the tasks." },
     spread: { t: "Task difficulty spread", d: "How much tasks differ in difficulty. The simulation draws each task's difficulty from a normal distribution on the log-odds scale with spread 0.5, 1 or 2. At a 50% overall rate, the middle 80% of tasks pass roughly 35–65% of the time (similar), 22–78% (mixed) or 7–93% (very mixed). A pilot that runs each task a few times shows which you have." },
+    vary: { t: "Tasks the versions handle differently", d: "Some tasks suit one version better than the other, and that stays true however many times you rerun them. Repeat attempts average out an agent's luck, but not this, so it sets how much extra attempts can help. The settings give roughly 10%, 25% or 50% of the single-attempt spread in per-task differences. Two different models on GSM8K measured 41–61%, so \"A lot\" is real data; the smaller settings are assumptions for closer versions. Check my results measures it from a pilot with 2+ attempts per task." },
     paired: { t: "Paired design", d: "Running both versions on the same tasks lets you compare them task by task. The task's difficulty affects both versions and cancels out, which can cut the tasks needed by half or more." },
     baseline: { t: "Baseline", d: "The version you compare against, usually the current production prompt or model." },
     checklist: { t: "Design checklist", d: "Eight common ways agent evals produce fake wins. Answer for your setup: each risky answer is added to the simulation, and the verdict reports the false-alarm rate it causes." },

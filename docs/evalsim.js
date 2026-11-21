@@ -7,6 +7,12 @@
  * the logit scale; each attempt adds Normal(0, sigma_noise). Success ~
  * Bernoulli(sigmoid(base + difficulty + noise + effect)).
  *
+ * Task-by-version interaction (sigma_int): each task also gets
+ * u ~ Normal(0, sigma_int), added as +u/2 to B and -u/2 to A, so some tasks
+ * suit one version better than the other. Repeat attempts cannot average
+ * this away; only more tasks can. sigma_int = 0 is the original model and
+ * draws no extra random numbers.
+ *
  * Paired design (default): both versions run on the same tasks, and the
  * analysis is a paired t-test on per-task differences in success rate:
  * the task is the unit of analysis. Unpaired design: each version gets its
@@ -81,7 +87,7 @@
     return x >= 0 ? 1 - tail : tail;
   }
 
-  var DEFAULTS = { n_tasks: 40, n_attempts: 3, base_logit: 0, sigma_task: 1.0, sigma_noise: 0.5, delta: 0, paired: true, alpha: 0.05,
+  var DEFAULTS = { n_tasks: 40, n_attempts: 3, base_logit: 0, sigma_task: 1.0, sigma_noise: 0.5, sigma_int: 0, delta: 0, paired: true, alpha: 0.05,
     compute_k: 1, err_excess: 0, parse_fail_rate: 0, naive_se: false, judge_bias: 0, drift: 0, prompt_cue: 0, n_outcomes: 1 };
   function withDefaults(s) { var o = {}; for (var k in DEFAULTS) o[k] = s && s[k] !== undefined ? s[k] : DEFAULTS[k]; return o; }
 
@@ -92,6 +98,15 @@
   function meanSuccess(base, sigma) {
     var s = 0; for (var i = 0; i < GH_X.length; i++) s += GH_W[i] * sigmoid(base + Math.SQRT2 * sigma * GH_X[i]);
     return s / Math.sqrt(Math.PI);
+  }
+  /* Logit spread of one version's success chances across tasks and attempts. */
+  function totalSigma(spread, noise, sigmaInt) { return Math.sqrt(spread * spread + noise * noise + (sigmaInt || 0) * (sigmaInt || 0) / 4); }
+  /* Add the task-by-version interaction in place: +u/2 to B, -u/2 to A. */
+  function splitTasks(s, rng, dA, dB) {
+    if (!(s.sigma_int > 0)) return [dA, dB];
+    var T = dA.length, a = new Array(T), b = new Array(T);
+    for (var t = 0; t < T; t++) { var u = rng.normal() * s.sigma_int; a[t] = dA[t] - u / 2; b[t] = dB[t] + u / 2; }
+    return [a, b];
   }
   function baseFor(rate, sigma) { var lo = -15, hi = 15; for (var i = 0; i < 80; i++) { var m = (lo + hi) / 2; if (meanSuccess(m, sigma) < rate) lo = m; else hi = m; } return (lo + hi) / 2; }
   function deltaFor(rate, gainPts, sigma) { // logit effect giving +gainPts (absolute, 0-1) on the mean rate
@@ -155,6 +170,7 @@
     var T = s.n_tasks, S = s.n_attempts, dA = new Array(T), dB = new Array(T), t;
     for (t = 0; t < T; t++) dA[t] = rng.normal() * s.sigma_task;
     if (s.paired) dB = dA; else for (t = 0; t < T; t++) dB[t] = rng.normal() * s.sigma_task;
+    var sp = splitTasks(s, rng, dA, dB); dA = sp[0]; dB = sp[1];
     var A = runArm(s, rng, false, dA, T, S), B = runArm(s, rng, true, dB, T, S);
     return analyzeArms(A, B, s.paired, s.naive_se);
   }
@@ -180,6 +196,7 @@
     var rng = makeRng(seed || 11), dA = new Array(s.n_tasks), dB = new Array(s.n_tasks);
     for (var t = 0; t < s.n_tasks; t++) dA[t] = rng.normal() * s.sigma_task;
     for (t = 0; t < s.n_tasks; t++) dB[t] = paired ? dA[t] : rng.normal() * s.sigma_task;
+    var sp = splitTasks(s, rng, dA, dB); dA = sp[0]; dB = sp[1];
     var A = runArm(s, rng, false, dA, s.n_tasks, s.n_attempts), B = runArm(s, rng, true, dB, s.n_tasks, s.n_attempts);
     var ma = taskMeans(A), mb = taskMeans(B), d = [];
     for (t = 0; t < ma.length; t++) d.push(mb[t] - ma[t]);
@@ -219,10 +236,23 @@
       d.push(mb - ma);
     });
     var n = d.length;
+    /* Task-by-version interaction, when tasks have 2+ attempts on each side:
+     * the spread of per-task differences that attempts cannot average away,
+     * as a share of the spread a single attempt per version would show. */
+    var wK = 0, w1 = 0, nw = 0;
+    tasks.forEach(function (t) {
+      var k = byTask[t]; if (k.a.length < 2 || k.b.length < 2) return;
+      var sv = function (xs) { var m = xs.reduce(function (x, y) { return x + y; }, 0) / xs.length; return xs.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / (xs.length - 1); };
+      var va = sv(k.a), vb = sv(k.b); wK += va / k.a.length + vb / k.b.length; w1 += va + vb; nw++;
+    });
     var out = { vA: vA, vB: vB, tasks: tasks.length, paired: n, onlyOne: onlyOne, attemptsA: attemptsA, attemptsB: attemptsB, rateA: nA ? xA / nA : NaN, rateB: nB ? xB / nB : NaN };
     if (n < 2) { out.error = "Need at least two tasks that ran on both versions."; return out; }
     var m = d.reduce(function (x, y) { return x + y; }, 0) / n, v = d.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / (n - 1), se = Math.sqrt(v / n);
     var tc = tQuantile975(n - 1);
+    if (nw >= Math.max(5, 0.8 * n)) {
+      var inter = Math.max(0, v - wK / nw), within1 = w1 / nw;
+      out.interaction = inter; out.within1 = within1; out.interactionShare = inter + within1 > 0 ? inter / (inter + within1) : 0;
+    }
     out.diff = m; out.se = se; out.lo = m - tc * se; out.hi = m + tc * se; out.p = se > 0 ? tPValue(m / se, n - 1) : (m ? 0 : 1);
     // task-level bootstrap (percentile), seeded
     var rng = makeRng(opts.seed || 2026), B = opts.boot || 2000, bs = [];
@@ -235,7 +265,7 @@
     return out;
   }
 
-  var api = { DEFAULTS: DEFAULTS, withDefaults: withDefaults, rate: rate, oneExperiment: oneExperiment, meanSuccess: meanSuccess, baseFor: baseFor, deltaFor: deltaFor, designEffect: designEffect, taskDiffSd: taskDiffSd, tasksFor80: tasksFor80, analyzeResults: analyzeResults, tPValue: tPValue, tQuantile975: tQuantile975, makeRng: makeRng };
+  var api = { DEFAULTS: DEFAULTS, withDefaults: withDefaults, totalSigma: totalSigma, rate: rate, oneExperiment: oneExperiment, meanSuccess: meanSuccess, baseFor: baseFor, deltaFor: deltaFor, designEffect: designEffect, taskDiffSd: taskDiffSd, tasksFor80: tasksFor80, analyzeResults: analyzeResults, tPValue: tPValue, tQuantile975: tQuantile975, makeRng: makeRng };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   g.EvalSim = api;
 })(typeof window !== "undefined" ? window : globalThis);

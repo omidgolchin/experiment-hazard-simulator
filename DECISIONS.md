@@ -91,3 +91,11 @@ checkpoints; log and continue.)
   KPIs and checks stay on the page for the reader to move to. The title
   is written only when its text changes, so an unchanged verdict is not
   read out again.
+
+## 2026-11-21: tasks that suit one version better
+
+- Checked against 6,000 real runs (3 models x 400 GSM8K questions x 5 runs, from llm-eval-error-bars), the planner's task counts for 80% power delivered 41-49% at 5 runs per question. The engine gave every task the same effect, so per-task differences shrank with every extra attempt. In the real runs 41-61% of the single-run spread of per-question differences is stable and does not shrink.
+- The engine (`docs/evalsim.js`, `sim/planner.py`) now draws a per-task shift u ~ Normal(0, sigma_int), +u/2 for B and -u/2 for A, so the null stays exact at any success rate and the design is symmetric in A and B. sigma_int = 0 draws no extra random numbers and reproduces the earlier engine exactly.
+- New input "Do the versions favour different tasks?": No / A little / Somewhat / A lot, like two models (sigma_int 0, 1.1, 2, 3.75; about 0, 10, 25 and 50% of the single-attempt spread of per-task differences). Default Somewhat. Only "A lot" is backed by real data, so the verdict shows the task count at all three non-zero settings.
+- The results checker estimates the share from pasted results with 2+ attempts per task and names the setting to use next. A pilot of 50 tasks estimated 26% for a pair whose full 400 questions gave 42%, so the message tells users with under 100 tasks to take the larger setting when in doubt.
+- Corrected: the tasks-vs-attempts tip (it said extra attempts work almost as well as extra tasks under pairing), the README's "conservative with shared tasks" line, the unit-of-analysis row and the check-mode note on the pooled interval. Real-run check added as a test (`tests/test_real_runs.py`). Screenshots and the GIF regenerated.

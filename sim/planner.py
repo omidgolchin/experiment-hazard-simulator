@@ -6,9 +6,13 @@ the sample-size formula delivers the power it promises.
 
 Model: version A and version B of an agent run on T tasks, S attempts per
 task per version. Task difficulty ~ Normal(0, sigma_task) on the logit
-scale, attempt noise ~ Normal(0, sigma_noise). Paired design: both versions
-see the same tasks and the analysis is a paired t-test on per-task
-differences (the task is the unit of analysis). Hazards as in evalsim.js.
+scale, attempt noise ~ Normal(0, sigma_noise). Task-by-version interaction:
+each task also gets u ~ Normal(0, sigma_int), added as +u/2 to B and -u/2
+to A, so some tasks suit one version better than the other and repeat
+attempts cannot average that away (sigma_int = 0 is the original model and
+draws no extra random numbers). Paired design: both versions see the same
+tasks and the analysis is a paired t-test on per-task differences (the task
+is the unit of analysis). Hazards as in evalsim.js.
 """
 
 from __future__ import annotations
@@ -26,6 +30,7 @@ class Design:
     base_logit: float = 0.0
     sigma_task: float = 1.0
     sigma_noise: float = 0.5
+    sigma_int: float = 0.0
     delta: float = 0.0
     paired: bool = True
     alpha: float = 0.05
@@ -72,6 +77,19 @@ def _arm(d: Design, rng, is_b: bool, diff: np.ndarray, n: int):
     return ok, keep
 
 
+def total_sigma(d: Design) -> float:
+    """Logit spread of one version's success chances across tasks and attempts."""
+    return float(np.sqrt(d.sigma_task ** 2 + d.sigma_noise ** 2 + d.sigma_int ** 2 / 4))
+
+
+def _split(d: Design, rng, diff_a, diff_b):
+    """Add the task-by-version interaction: +u/2 to B, -u/2 to A."""
+    if d.sigma_int <= 0:
+        return diff_a, diff_b
+    u = rng.normal(0, d.sigma_int, diff_a.shape)
+    return diff_a - u / 2, diff_b + u / 2
+
+
 def _analyze(d: Design, a, b):
     (ya, ka), (yb, kb) = a, b
     if d.naive_se:
@@ -115,6 +133,7 @@ def rate(d: Design, n_exp: int, seed: int = 1) -> dict:
     for _ in range(max(1, d.n_outcomes)):
         diff_a = rng.normal(0, d.sigma_task, (n_exp, d.n_tasks))
         diff_b = diff_a if d.paired else rng.normal(0, d.sigma_task, (n_exp, d.n_tasks))
+        diff_a, diff_b = _split(d, rng, diff_a, diff_b)
         est, p = _analyze(d, _arm(d, rng, False, diff_a, n_exp), _arm(d, rng, True, diff_b, n_exp))
         better = p < best_p
         best_p = np.where(better, p, best_p)
@@ -145,7 +164,8 @@ def task_diff_sd(d: Design, n_tasks: int = 20000, seed: int = 11) -> float:
     rng = np.random.default_rng(seed)
     dd = replace(d, n_tasks=n_tasks, paired=True)
     diff = rng.normal(0, d.sigma_task, (1, n_tasks))
-    (ya, ka), (yb, kb) = _arm(dd, rng, False, diff, 1), _arm(dd, rng, True, diff, 1)
+    diff_a, diff_b = _split(dd, rng, diff, diff)
+    (ya, ka), (yb, kb) = _arm(dd, rng, False, diff_a, 1), _arm(dd, rng, True, diff_b, 1)
     ma = (ya & ka).sum(axis=2) / ka.sum(axis=2)
     mb = (yb & kb).sum(axis=2) / kb.sum(axis=2)
     return float(np.std(mb - ma, ddof=1))
