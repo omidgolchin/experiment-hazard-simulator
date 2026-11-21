@@ -211,6 +211,37 @@
   }
   function normInvApprox(p) { var lo = -10, hi = 10; for (var i = 0; i < 80; i++) { var m = (lo + hi) / 2; if (normCdf(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
 
+  /* Variance inflation for planning from a pilot of n tasks: the one-sided
+   * upper confidence bound of a variance, (n - 1) / chi2_{1-level}(n - 1).
+   * Chi-square quantile by the Wilson-Hilferty approximation (within 1% of
+   * the exact value for n >= 5; tests check it against scipy). */
+  function pilotMargin(n, level) {
+    var df = n - 1; if (df < 1) return Infinity;
+    var z = normInvApprox(1 - (level || 0.8)), c = 2 / (9 * df);
+    var q = df * Math.pow(1 - c + z * Math.sqrt(c), 3);
+    return df / q;
+  }
+  /* Tasks for 80% in the next eval, planned from pasted pilot results (the
+   * output of analyzeResults). The spread of per-task differences at K
+   * attempts is I + W/K: I, the stable part (tasks that suit one version
+   * better), and W, the single-attempt noise. Each plan is given plain and
+   * with the pilot margin. Without 2+ attempts per task on both versions, I
+   * and W cannot be separated, so only the pilot's own attempt count can be
+   * planned. */
+  function planFromPilot(r, gain, attemptsList, level) {
+    if (!r || !(r.paired >= 5) || !(gain > 0)) return null;
+    var f = pilotMargin(r.paired, level || 0.8), rows = [];
+    var single = r.interaction == null;
+    var kPilot = Math.max(1, Math.round(r.attemptsA / Math.max(1, r.tasks)));
+    var list = single ? [kPilot] : attemptsList;
+    list.forEach(function (K) {
+      var v = single ? r.se * r.se * r.paired : r.interaction + r.within1 / K;
+      if (!(v > 0)) return;
+      rows.push({ attempts: K, tasks: Math.max(2, tasksFor80(Math.sqrt(v * f), gain)), plain: Math.max(2, tasksFor80(Math.sqrt(v), gain)) });
+    });
+    return { rows: rows, margin: f, pilotTasks: r.paired, singleAttempt: single };
+  }
+
   /* Latent-scale intraclass correlation and the effective number of
    * independent attempts per version (design effect 1 + (S-1) ICC). */
   function designEffect(sigmaTask, sigmaNoise, T, S) {
@@ -265,7 +296,7 @@
     return out;
   }
 
-  var api = { DEFAULTS: DEFAULTS, withDefaults: withDefaults, totalSigma: totalSigma, rate: rate, oneExperiment: oneExperiment, meanSuccess: meanSuccess, baseFor: baseFor, deltaFor: deltaFor, designEffect: designEffect, taskDiffSd: taskDiffSd, tasksFor80: tasksFor80, analyzeResults: analyzeResults, tPValue: tPValue, tQuantile975: tQuantile975, makeRng: makeRng };
+  var api = { DEFAULTS: DEFAULTS, withDefaults: withDefaults, totalSigma: totalSigma, rate: rate, oneExperiment: oneExperiment, meanSuccess: meanSuccess, baseFor: baseFor, deltaFor: deltaFor, designEffect: designEffect, pilotMargin: pilotMargin, planFromPilot: planFromPilot, taskDiffSd: taskDiffSd, tasksFor80: tasksFor80, analyzeResults: analyzeResults, tPValue: tPValue, tQuantile975: tQuantile975, makeRng: makeRng };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   g.EvalSim = api;
 })(typeof window !== "undefined" ? window : globalThis);

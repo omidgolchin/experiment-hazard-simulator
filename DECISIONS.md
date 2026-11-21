@@ -99,3 +99,10 @@ checkpoints; log and continue.)
 - New input "Do the versions favour different tasks?": No / A little / Somewhat / A lot, like two models (sigma_int 0, 1.1, 2, 3.75; about 0, 10, 25 and 50% of the single-attempt spread of per-task differences). Default Somewhat. Only "A lot" is backed by real data, so the verdict shows the task count at all three non-zero settings.
 - The results checker estimates the share from pasted results with 2+ attempts per task and names the setting to use next. A pilot of 50 tasks estimated 26% for a pair whose full 400 questions gave 42%, so the message tells users with under 100 tasks to take the larger setting when in doubt.
 - Corrected: the tasks-vs-attempts tip (it said extra attempts work almost as well as extra tasks under pairing), the README's "conservative with shared tasks" line, the unit-of-analysis row and the check-mode note on the pooled interval. Real-run check added as a test (`tests/test_real_runs.py`). Screenshots and the GIF regenerated.
+
+## 2026-11-21: planning the next eval from a pilot
+
+- The results checker now plans the next eval from the pasted results: tasks for 80% at 1, the current and double the current attempts per task, from the stable part I and single-attempt noise W of per-task differences (variance I + W/K).
+- A small pilot underestimates the variance about half the time. The plan therefore uses the one-sided 80% upper confidence bound of the variance, (n - 1)/chi2_0.20(n - 1) (Wilson-Hilferty in the browser, within 1% of the exact quantile). The plain plan is shown beside it.
+- Checked on the GSM8K runs with 150 random pilots of 30 and 50 questions (3 runs each): plans reached 80% real power in 29-83% of pilots without the margin and 66-97% with it (validation/check_pilot_margin.py). Kept the 80% level: it costs about a quarter more tasks; a 90% bound would cost more for a smaller gain.
+- Validation scripts take write=False in tests, so the committed results files come only from the full runs.

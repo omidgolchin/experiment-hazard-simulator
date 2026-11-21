@@ -183,3 +183,33 @@ def test_check_mode_measures_the_interaction_share():
     assert proc.returncode == 0, proc.stderr
     r = json.loads(proc.stdout)
     assert r["interactionShare"] == pytest.approx(inter / (inter + within1), abs=0.06)
+
+
+# ---- planning the next eval from a pilot (results checker), added 2026-11-21 ----
+
+@needs_node
+@pytest.mark.parametrize("n", [10, 30, 50, 100])
+def test_pilot_margin_matches_chi_square_bound(n):
+    js = _js("E.pilotMargin(%d, 0.8)" % n)
+    assert js == pytest.approx((n - 1) / stats.chi2.ppf(0.2, n - 1), rel=0.01)
+
+
+@needs_node
+def test_plan_from_pilot_matches_the_variance_formula():
+    rng = np.random.default_rng(8)
+    pa = rng.uniform(0.2, 0.8, 60)
+    pb = np.clip(pa + rng.normal(0.08, 0.2, 60), 0.02, 0.98)
+    A = (rng.random((60, 3)) < pa[:, None]).astype(float)
+    B = (rng.random((60, 3)) < pb[:, None]).astype(float)
+    rows = [{"task": "t%d" % t, "version": v, "attempt": a, "success": int(M[t, a])}
+            for t in range(60) for v, M in (("A", A), ("B", B)) for a in range(3)]
+    proc = subprocess.run([NODE, "-e", "const E=require('./docs/evalsim.js'); const rows=JSON.parse(require('fs').readFileSync(0,'utf8'));"
+                           " const r=E.analyzeResults(rows, {a: 'A'}); console.log(JSON.stringify(E.planFromPilot(r, 0.1, [1, 3, 6])));"],
+                          input=json.dumps(rows), capture_output=True, text=True, timeout=300, cwd=ROOT)
+    plan = json.loads(proc.stdout)
+    from validation.check_pilot_margin import margin, pilot_components
+    I, W = pilot_components(A, B)
+    for row in plan["rows"]:
+        v = I + W / row["attempts"]
+        assert row["plain"] == tasks_for_80(math.sqrt(v), 0.1)
+        assert abs(row["tasks"] - tasks_for_80(math.sqrt(v * margin(60)), 0.1)) <= 1  # Wilson-Hilferty vs exact

@@ -73,7 +73,7 @@ def real_power(A, B, n, K, rng, reps=3000):
     return float(np.mean((p < 0.05) & (t > 0) & (s > 0)))
 
 
-def main(reps=3000, seed=7):
+def main(reps=3000, seed=7, write=True):
     M = load()
     rng = np.random.default_rng(seed)
     rows = []
@@ -90,7 +90,8 @@ def main(reps=3000, seed=7):
                              "measured_interaction_share": round(float(interaction_share(A, B)), 2),
                              "setting": label, "attempts": K, "planned_tasks": n,
                              "real_power": round(real_power(A, B, n, K, rng, reps), 3)})
-    (HERE / "results.json").write_text(json.dumps(rows, indent=1) + "\n")
+    if write:
+        (HERE / "results.json").write_text(json.dumps(rows, indent=1) + "\n")
     return rows
 
 

@@ -1,0 +1,362 @@
+[
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "plain",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.42,
+  "share_reaching_75": 0.693,
+  "mean_power": 0.779,
+  "p10_power": 0.682
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "plain",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.413,
+  "share_reaching_75": 0.593,
+  "mean_power": 0.761,
+  "p10_power": 0.608
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "plain",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.413,
+  "share_reaching_75": 0.533,
+  "mean_power": 0.75,
+  "p10_power": 0.574
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "margin",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.84,
+  "share_reaching_75": 0.94,
+  "mean_power": 0.87,
+  "p10_power": 0.778
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "margin",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.767,
+  "share_reaching_75": 0.867,
+  "mean_power": 0.853,
+  "p10_power": 0.732
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "margin",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.707,
+  "share_reaching_75": 0.8,
+  "mean_power": 0.838,
+  "p10_power": 0.688
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.72,
+  "share_reaching_75": 0.887,
+  "mean_power": 0.849,
+  "p10_power": 0.743
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.733,
+  "share_reaching_75": 0.82,
+  "mean_power": 0.845,
+  "p10_power": 0.65
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.713,
+  "share_reaching_75": 0.807,
+  "mean_power": 0.843,
+  "p10_power": 0.636
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.953,
+  "share_reaching_75": 0.973,
+  "mean_power": 0.922,
+  "p10_power": 0.851
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.9,
+  "share_reaching_75": 0.94,
+  "mean_power": 0.92,
+  "p10_power": 0.819
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.907,
+  "share_reaching_75": 0.933,
+  "mean_power": 0.917,
+  "p10_power": 0.81
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.293,
+  "share_reaching_75": 0.62,
+  "mean_power": 0.77,
+  "p10_power": 0.711
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.333,
+  "share_reaching_75": 0.58,
+  "mean_power": 0.765,
+  "p10_power": 0.652
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.393,
+  "share_reaching_75": 0.6,
+  "mean_power": 0.767,
+  "p10_power": 0.642
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.953,
+  "share_reaching_75": 0.993,
+  "mean_power": 0.867,
+  "p10_power": 0.815
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.853,
+  "share_reaching_75": 0.96,
+  "mean_power": 0.866,
+  "p10_power": 0.79
+ },
+ {
+  "pilot_questions": 30,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.82,
+  "share_reaching_75": 0.927,
+  "mean_power": 0.86,
+  "p10_power": 0.758
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "plain",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.427,
+  "share_reaching_75": 0.76,
+  "mean_power": 0.785,
+  "p10_power": 0.708
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "plain",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.387,
+  "share_reaching_75": 0.66,
+  "mean_power": 0.773,
+  "p10_power": 0.648
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "plain",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.433,
+  "share_reaching_75": 0.607,
+  "mean_power": 0.765,
+  "p10_power": 0.62
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "margin",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.86,
+  "share_reaching_75": 0.98,
+  "mean_power": 0.852,
+  "p10_power": 0.783
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "margin",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.747,
+  "share_reaching_75": 0.887,
+  "mean_power": 0.842,
+  "p10_power": 0.735
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
+  "plan": "margin",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.66,
+  "share_reaching_75": 0.833,
+  "mean_power": 0.833,
+  "p10_power": 0.707
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.827,
+  "share_reaching_75": 0.927,
+  "mean_power": 0.864,
+  "p10_power": 0.763
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.8,
+  "share_reaching_75": 0.86,
+  "mean_power": 0.866,
+  "p10_power": 0.729
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.8,
+  "share_reaching_75": 0.847,
+  "mean_power": 0.867,
+  "p10_power": 0.717
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.973,
+  "share_reaching_75": 0.993,
+  "mean_power": 0.919,
+  "p10_power": 0.857
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.947,
+  "share_reaching_75": 0.98,
+  "mean_power": 0.925,
+  "p10_power": 0.837
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "Muse-Glimmer-30B -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.94,
+  "share_reaching_75": 0.96,
+  "mean_power": 0.924,
+  "p10_power": 0.84
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.327,
+  "share_reaching_75": 0.753,
+  "mean_power": 0.778,
+  "p10_power": 0.725
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.42,
+  "share_reaching_75": 0.68,
+  "mean_power": 0.776,
+  "p10_power": 0.666
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "plain",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.447,
+  "share_reaching_75": 0.693,
+  "mean_power": 0.781,
+  "p10_power": 0.646
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 1,
+  "share_reaching_80": 0.86,
+  "share_reaching_75": 0.987,
+  "mean_power": 0.846,
+  "p10_power": 0.795
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 3,
+  "share_reaching_80": 0.807,
+  "share_reaching_75": 0.92,
+  "mean_power": 0.847,
+  "p10_power": 0.767
+ },
+ {
+  "pilot_questions": 50,
+  "pair": "qwen-2-1.5b-instruct -> Inkling",
+  "plan": "margin",
+  "runs_per_question": 5,
+  "share_reaching_80": 0.787,
+  "share_reaching_75": 0.907,
+  "mean_power": 0.85,
+  "p10_power": 0.758
+ }
+]

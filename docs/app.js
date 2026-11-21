@@ -395,8 +395,10 @@
     else if (r.hi < 0) { title = r.vB + " is worse by " + pts(-r.diff).slice(1) + " points"; cls = "bad"; }
     else { title = "No clear difference yet"; cls = "warn"; }
     var gainPts = num("gain") || 5;
-    var n80 = EvalSim.tasksFor80(Math.sqrt(r.se * r.se * r.paired), gainPts / 100);
-    var body = "On the same tasks, " + r.vB + "'s success rate was " + Math.abs(100 * r.diff).toFixed(1) + " points " + (r.diff >= 0 ? "higher" : "lower") + " than " + r.vA + "'s on average (95% interval " + pts(r.lo) + " to " + pts(r.hi) + " points, " + r.paired + " tasks)." + (cls === "warn" ? " With this much variation between tasks, detecting a " + gainPts + "-point difference (your planning target) 80% of the time takes about " + F.int(n80) + " tasks." : "");
+    var kNow = Math.max(1, Math.round(r.attemptsA / Math.max(1, r.tasks)));
+    var nextPlan = EvalSim.planFromPilot(r, gainPts / 100, [1, kNow, 2 * kNow].filter(function (k, i, a) { return a.indexOf(k) === i; }));
+    var n80 = nextPlan && nextPlan.rows.length ? nextPlan.rows.filter(function (x) { return x.attempts === kNow; }).concat(nextPlan.rows)[0].tasks : EvalSim.tasksFor80(Math.sqrt(r.se * r.se * r.paired), gainPts / 100);
+    var body = "On the same tasks, " + r.vB + "'s success rate was " + Math.abs(100 * r.diff).toFixed(1) + " points " + (r.diff >= 0 ? "higher" : "lower") + " than " + r.vA + "'s on average (95% interval " + pts(r.lo) + " to " + pts(r.hi) + " points, " + r.paired + " tasks)." + (cls === "warn" ? " With this much variation between tasks, detecting a " + gainPts + "-point difference (your planning target) 80% of the time takes about " + F.int(n80) + " tasks at " + kNow + " attempt" + (kNow === 1 ? "" : "s") + " each, with a safety margin (see Plan the next eval)." : "");
     var naiveSig = r.naiveP < 0.05, taskSig = r.p < 0.05;
     if (naiveSig !== taskSig) body += naiveSig ? " Counting attempts as independent would have called this significant; the task-level analysis does not." : " Counting attempts as independent would have missed it: pairing by task removes task difficulty from the comparison.";
     title = title.charAt(0).toUpperCase() + title.slice(1);
@@ -412,6 +414,11 @@
     if (r.interactionShare != null) {
       var sh = r.interactionShare, near = sh < 0.175 ? VARY[0] : sh < 0.375 ? VARY[1] : VARY[2];
       c.push(["info", "MEASURED", "Tasks the versions handle differently", "About " + Math.round(100 * sh) + "% of the spread in per-task differences comes from tasks that suit one version better than the other, which more attempts cannot average away. " + (sh < 0.05 ? "Little or none here, but a pilot cannot rule out a small amount: plan the next eval with \"A little\" (about 10%)." : "Plan the next eval with \"" + near.opt + "\" (" + near.share + ").") + (r.paired < 100 ? " With " + r.paired + " tasks this estimate is rough: if it falls between two settings, take the larger." : "")]);
+    }
+    if (nextPlan && nextPlan.rows.length) {
+      var pr = nextPlan.rows, more = pr.some(function (x) { return x.attempts > kNow; });
+      var withM = pr.map(function (x, i) { return F.int(x.tasks) + (i === 0 ? " tasks at " : " at ") + x.attempts + " attempt" + (x.attempts === 1 ? "" : "s") + (i === 0 ? " each" : ""); }).join(", ");
+      c.push(["info", "NEXT EVAL", "Plan the next eval from these results", "To detect a " + gainPts + "-point difference 80% of the time: " + withM + ". This includes a safety margin (× " + nextPlan.margin.toFixed(2) + " on the spread for a " + nextPlan.pilotTasks + "-task pilot), because a small pilot underestimates the spread about half the time; on real runs, the margin raised the share of plans reaching 80% from 29–83% to 66–97%. Without it: " + pr.map(function (x) { return F.int(x.plain); }).join(" / ") + " tasks." + (more ? " The plan for more attempts than this pilot used is the least certain." : "") + (nextPlan.singleAttempt ? " Run 2 or more attempts per task on both versions to plan other attempt counts." : "")]);
     }
     if (r.bad) c.push(["warn", "SKIPPED", "Unreadable rows", r.bad + " row" + (r.bad === 1 ? "" : "s") + " could not be read and were skipped."]);
     if (parsed.graded) c.unshift(["warn", "CUT AT 0.5", "Graded scores", parsed.graded + " results were scores between 0 and 1 rather than pass/fail. They were cut at 0.5 (0.7 counts as a success, 0.4 as a failure), so the detail in graded scores is lost. This tool analyzes pass/fail results."]);

@@ -7,7 +7,7 @@
   "setting": "No",
   "attempts": 1,
   "planned_tasks": 103,
-  "real_power": 0.756
+  "real_power": 0.761
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -17,7 +17,7 @@
   "setting": "No",
   "attempts": 3,
   "planned_tasks": 37,
-  "real_power": 0.538
+  "real_power": 0.534
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -27,7 +27,7 @@
   "setting": "No",
   "attempts": 5,
   "planned_tasks": 23,
-  "real_power": 0.382
+  "real_power": 0.407
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -37,7 +37,7 @@
   "setting": "A little",
   "attempts": 1,
   "planned_tasks": 111,
-  "real_power": 0.791
+  "real_power": 0.794
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -47,7 +47,7 @@
   "setting": "A little",
   "attempts": 3,
   "planned_tasks": 45,
-  "real_power": 0.597
+  "real_power": 0.617
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -57,7 +57,7 @@
   "setting": "A little",
   "attempts": 5,
   "planned_tasks": 32,
-  "real_power": 0.516
+  "real_power": 0.501
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -67,7 +67,7 @@
   "setting": "Somewhat",
   "attempts": 1,
   "planned_tasks": 125,
-  "real_power": 0.835
+  "real_power": 0.826
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -77,7 +77,7 @@
   "setting": "Somewhat",
   "attempts": 3,
   "planned_tasks": 62,
-  "real_power": 0.746
+  "real_power": 0.761
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -87,7 +87,7 @@
   "setting": "Somewhat",
   "attempts": 5,
   "planned_tasks": 50,
-  "real_power": 0.716
+  "real_power": 0.722
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -97,7 +97,7 @@
   "setting": "A lot, like two different models",
   "attempts": 1,
   "planned_tasks": 156,
-  "real_power": 0.907
+  "real_power": 0.902
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -107,7 +107,7 @@
   "setting": "A lot, like two different models",
   "attempts": 3,
   "planned_tasks": 102,
-  "real_power": 0.925
+  "real_power": 0.929
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Muse-Glimmer-30B",
@@ -117,7 +117,7 @@
   "setting": "A lot, like two different models",
   "attempts": 5,
   "planned_tasks": 92,
-  "real_power": 0.942
+  "real_power": 0.931
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -127,7 +127,7 @@
   "setting": "No",
   "attempts": 1,
   "planned_tasks": 44,
-  "real_power": 0.937
+  "real_power": 0.954
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -137,7 +137,7 @@
   "setting": "No",
   "attempts": 3,
   "planned_tasks": 18,
-  "real_power": 0.7
+  "real_power": 0.692
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -147,7 +147,7 @@
   "setting": "No",
   "attempts": 5,
   "planned_tasks": 13,
-  "real_power": 0.513
+  "real_power": 0.489
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -157,7 +157,7 @@
   "setting": "A little",
   "attempts": 1,
   "planned_tasks": 46,
-  "real_power": 0.943
+  "real_power": 0.953
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -167,7 +167,7 @@
   "setting": "A little",
   "attempts": 3,
   "planned_tasks": 20,
-  "real_power": 0.76
+  "real_power": 0.777
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -177,7 +177,7 @@
   "setting": "A little",
   "attempts": 5,
   "planned_tasks": 15,
-  "real_power": 0.6
+  "real_power": 0.615
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -187,7 +187,7 @@
   "setting": "Somewhat",
   "attempts": 1,
   "planned_tasks": 50,
-  "real_power": 0.961
+  "real_power": 0.973
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -197,7 +197,7 @@
   "setting": "Somewhat",
   "attempts": 3,
   "planned_tasks": 26,
-  "real_power": 0.895
+  "real_power": 0.906
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -207,7 +207,7 @@
   "setting": "Somewhat",
   "attempts": 5,
   "planned_tasks": 21,
-  "real_power": 0.836
+  "real_power": 0.843
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -227,7 +227,7 @@
   "setting": "A lot, like two different models",
   "attempts": 3,
   "planned_tasks": 38,
-  "real_power": 0.976
+  "real_power": 0.978
  },
  {
   "pair": "Muse-Glimmer-30B -> Inkling",
@@ -237,7 +237,7 @@
   "setting": "A lot, like two different models",
   "attempts": 5,
   "planned_tasks": 34,
-  "real_power": 0.972
+  "real_power": 0.979
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -247,7 +247,7 @@
   "setting": "No",
   "attempts": 1,
   "planned_tasks": 18,
-  "real_power": 0.78
+  "real_power": 0.767
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -257,7 +257,7 @@
   "setting": "No",
   "attempts": 3,
   "planned_tasks": 8,
-  "real_power": 0.591
+  "real_power": 0.584
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -267,7 +267,7 @@
   "setting": "No",
   "attempts": 5,
   "planned_tasks": 6,
-  "real_power": 0.455
+  "real_power": 0.45
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -277,7 +277,7 @@
   "setting": "A little",
   "attempts": 1,
   "planned_tasks": 18,
-  "real_power": 0.78
+  "real_power": 0.787
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -287,7 +287,7 @@
   "setting": "A little",
   "attempts": 3,
   "planned_tasks": 9,
-  "real_power": 0.655
+  "real_power": 0.629
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -297,7 +297,7 @@
   "setting": "A little",
   "attempts": 5,
   "planned_tasks": 7,
-  "real_power": 0.564
+  "real_power": 0.565
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -307,7 +307,7 @@
   "setting": "Somewhat",
   "attempts": 1,
   "planned_tasks": 19,
-  "real_power": 0.806
+  "real_power": 0.799
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -317,7 +317,7 @@
   "setting": "Somewhat",
   "attempts": 3,
   "planned_tasks": 11,
-  "real_power": 0.767
+  "real_power": 0.757
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -327,7 +327,7 @@
   "setting": "Somewhat",
   "attempts": 5,
   "planned_tasks": 9,
-  "real_power": 0.731
+  "real_power": 0.749
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -337,7 +337,7 @@
   "setting": "A lot, like two different models",
   "attempts": 1,
   "planned_tasks": 23,
-  "real_power": 0.874
+  "real_power": 0.873
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -347,7 +347,7 @@
   "setting": "A lot, like two different models",
   "attempts": 3,
   "planned_tasks": 15,
-  "real_power": 0.901
+  "real_power": 0.909
  },
  {
   "pair": "qwen-2-1.5b-instruct -> Inkling",
@@ -357,6 +357,6 @@
   "setting": "A lot, like two different models",
   "attempts": 5,
   "planned_tasks": 13,
-  "real_power": 0.886
+  "real_power": 0.887
  }
 ]
